@@ -1,0 +1,35 @@
+[
+  {
+    "id": "6a315573-6aa5-4a92-b419-8ae0ee3d1346",
+    "name": "Tapioka brašno",
+    "description": "tapioka brašno",
+    "brand": "No Gluten No Problem",
+    "category": "brašno",
+    "tags": [
+      "brašno",
+      "tapioka",
+      ""
+    ],
+    "certified": true,
+    "image": "/images/products/6a315573-6aa5-4a92-b419-8ae0ee3d1346-357327d81e7592a6661fbca6215a61db162ccd438802a608d05fb668bf373162.jpeg",
+    "store": "Konzum",
+    "price": 3.99,
+    "weight": 500
+  },
+  {
+    "id": "1",
+    "name": "Dominos kocke",
+    "description": "Slatkiš koji se pojavljuje samo u božićno doba",
+    "brand": "Schär",
+    "category": "slatkiši",
+    "tags": [
+      "slatkiši",
+      ""
+    ],
+    "certified": true,
+    "store": "Bio Planet",
+    "weight": 140,
+    "image": "/images/products/1-Bio_Dominosteine_Alnavit_glutenfrei.jpg",
+    "price": 5.5
+  }
+]
