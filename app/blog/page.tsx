@@ -34,7 +34,7 @@ export default function BlogPage() {
   const categories = ["sve", ...Array.from(new Set(allPosts.map((p) => p.category)))];
 
   const filteredPosts = useMemo(() => {
-    return allPosts.filter((post) => {
+    const filtered = allPosts.filter((post) => {
       const matchesSearch =
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -43,6 +43,13 @@ export default function BlogPage() {
       const matchesCategory = selectedCategory === "sve" || post.category === selectedCategory;
 
       return matchesSearch && matchesCategory;
+    });
+
+    // Sortiraj po datumu - najnoviji prvi
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA; // Opadajući redoslijed (najnoviji prvi)
     });
   }, [searchQuery, selectedCategory, allPosts]);
 

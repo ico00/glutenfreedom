@@ -1,47 +1,20 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir, readFile } from "fs/promises";
-import { existsSync } from "fs";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
-import { BlogPost } from "@/types";
+import { BlogPost, BlogPostMetadata } from "@/types";
 import { mockBlogPosts } from "@/data/mockData";
-
-const blogFilePath = path.join(process.cwd(), "data", "blog.json");
-
-async function readBlogFile(): Promise<BlogPost[]> {
-  try {
-    if (existsSync(blogFilePath)) {
-      const fileContents = await readFile(blogFilePath, "utf-8");
-      return JSON.parse(fileContents);
-    }
-    return [];
-  } catch (error) {
-    console.error("Error reading blog file:", error);
-    return [];
-  }
-}
-
-async function writeBlogFile(posts: BlogPost[]): Promise<void> {
-  await mkdir(path.dirname(blogFilePath), { recursive: true });
-  await writeFile(blogFilePath, JSON.stringify(posts, null, 2), "utf8");
-}
-
-// Funkcija za izračun vremena čitanja na temelju broja riječi
-function calculateReadTime(content: string): number {
-  // Ukloni HTML tagove ako postoje, i razdvoji riječi
-  const text = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  const words = text.split(' ').filter(word => word.length > 0);
-  
-  // Prosječna brzina čitanja je 200-250 riječi po minuti
-  // Koristimo 225 riječi po minuti kao prosjek
-  const wordsPerMinute = 225;
-  const readTime = Math.ceil(words.length / wordsPerMinute);
-  
-  // Minimum 1 minuta
-  return Math.max(1, readTime);
-}
+import {
+  readBlogMetadata,
+  writeBlogMetadata,
+  readPostContent,
+  writePostContent,
+  getFullBlogPost,
+  getAllBlogPosts,
+  calculateReadTime,
+} from "@/lib/blogUtils";
 
 async function getAllPosts(): Promise<BlogPost[]> {
-  const dynamicPosts = await readBlogFile();
+  const dynamicPosts = await getAllBlogPosts();
   
   // Filtriraj mock postove - ako postoji dinamički post s istim ID-om, koristi dinamički
   const filteredMockPosts = mockBlogPosts.filter(
@@ -84,20 +57,28 @@ export async function PUT(
     const existingPost = allPosts[postIndex];
     const galleryCount = parseInt(formData.get("galleryCount") as string) || 0;
 
-    const content = (formData.get("content") as string) || existingPost.content;
+    // Konvertiraj HTML u Markdown
+    let content = (formData.get("content") as string) || existingPost.content;
+    content = htmlToMarkdown(content);
     const readTime = calculateReadTime(content);
 
-    const updatedPost: BlogPost = {
-      ...existingPost,
+    // Ažuriraj Markdown sadržaj
+    await writePostContent(id, content);
+
+    // Kreiraj ažurirani metadata objekt
+    const updatedMetadata: BlogPostMetadata = {
+      id: existingPost.id,
       title: (formData.get("title") as string) || existingPost.title,
       excerpt: (formData.get("excerpt") as string) || existingPost.excerpt,
-      content: content,
-      author: (formData.get("author") as string) || existingPost.author,
+      image: existingPost.image,
+      gallery: existingPost.gallery || [],
+      author: "Ivica Drusany", // Fiksni autor
       tags: formData.get("tags")
         ? JSON.parse(formData.get("tags") as string)
         : existingPost.tags,
       category: (formData.get("category") as string) || existingPost.category,
       readTime: readTime,
+      createdAt: (formData.get("createdAt") as string) || existingPost.createdAt,
     };
 
     // Upload nove glavne slike ako je dodana
@@ -105,60 +86,61 @@ export async function PUT(
     if (imageFile && imageFile.size > 0) {
       const uploadDir = path.join(process.cwd(), "public", "images", "blog");
       await mkdir(uploadDir, { recursive: true });
-      const filename = `${updatedPost.id}-${imageFile.name}`;
+      const filename = `${id}-${imageFile.name}`;
       const filePath = path.join(uploadDir, filename);
       await writeFile(filePath, Buffer.from(await imageFile.arrayBuffer()));
-      updatedPost.image = `/images/blog/${filename}`;
+      updatedMetadata.image = `/images/blog/${filename}`;
     }
 
     // Upload nove galerije slika ako su dodane
     if (galleryCount > 0) {
-      const galleryUrls: string[] = existingPost.gallery || [];
+      const galleryUrls: string[] = [...(existingPost.gallery || [])];
       for (let i = 0; i < galleryCount; i++) {
         const galleryFile = formData.get(`gallery_${i}`) as File | null;
         if (galleryFile && galleryFile.size > 0) {
           const uploadDir = path.join(process.cwd(), "public", "images", "blog", "gallery");
           await mkdir(uploadDir, { recursive: true });
-          const filename = `${updatedPost.id}-gallery-${Date.now()}-${i}-${galleryFile.name}`;
+          const filename = `${id}-gallery-${Date.now()}-${i}-${galleryFile.name}`;
           const filePath = path.join(uploadDir, filename);
           await writeFile(filePath, Buffer.from(await galleryFile.arrayBuffer()));
           galleryUrls.push(`/images/blog/gallery/${filename}`);
         }
       }
-      updatedPost.gallery = galleryUrls;
+      updatedMetadata.gallery = galleryUrls;
     }
 
-    // Ažuriraj samo dinamičke postove (ne mock)
-    const dynamicPosts = await readBlogFile();
-    const dynamicIndex = dynamicPosts.findIndex((p) => p.id === id);
+    // Ažuriraj metadata u JSON
+    const metadataList = await readBlogMetadata();
+    const metadataIndex = metadataList.findIndex((p) => p.id === id);
 
-    if (dynamicIndex !== -1) {
-      // Ažuriraj postojeći dinamički post - ZAMIJENI postojeći, ne dodaj novi
-      dynamicPosts[dynamicIndex] = updatedPost;
-      await writeBlogFile(dynamicPosts);
+    if (metadataIndex !== -1) {
+      // Ažuriraj postojeći metadata
+      metadataList[metadataIndex] = updatedMetadata;
+      await writeBlogMetadata(metadataList);
     } else {
       // Provjeri da li je mock post - ako jest, dodaj kao novi dinamički
       const isMockPost = mockBlogPosts.some((p) => p.id === id);
       if (isMockPost) {
-        // Mock post se dodaje kao novi dinamički post (prvi put kada se edita)
-        // Provjeri da li već postoji post s istim ID-om u dinamičkim (zbog mogućih duplikata)
-        const existingDuplicateIndex = dynamicPosts.findIndex((p) => p.id === id);
+        // Provjeri da li već postoji post s istim ID-om u metadata
+        const existingDuplicateIndex = metadataList.findIndex((p) => p.id === id);
         if (existingDuplicateIndex !== -1) {
-          // Ako već postoji, ažuriraj ga umjesto dodavanja novog
-          dynamicPosts[existingDuplicateIndex] = updatedPost;
+          metadataList[existingDuplicateIndex] = updatedMetadata;
         } else {
-          // Ako ne postoji, dodaj novi
-          dynamicPosts.push(updatedPost);
+          metadataList.push(updatedMetadata);
         }
-        await writeBlogFile(dynamicPosts);
+        await writeBlogMetadata(metadataList);
       } else {
-        // Ako post ne postoji ni u mock ni u dinamičkim, to je greška
         return NextResponse.json(
           { message: "Post not found in database" },
           { status: 404 }
         );
       }
     }
+
+    const updatedPost: BlogPost = {
+      ...updatedMetadata,
+      content,
+    };
 
     return NextResponse.json({ message: "Post updated successfully", post: updatedPost });
   } catch (error) {
@@ -176,9 +158,18 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const dynamicPosts = await readBlogFile();
-    const filteredPosts = dynamicPosts.filter((p) => p.id !== id);
-    await writeBlogFile(filteredPosts);
+    const metadataList = await readBlogMetadata();
+    const filteredMetadata = metadataList.filter((p) => p.id !== id);
+    await writeBlogMetadata(filteredMetadata);
+
+    // Obriši Markdown fajl
+    const contentPath = path.join(process.cwd(), "content", "posts", `${id}.md`);
+    try {
+      await unlink(contentPath);
+    } catch (error) {
+      // Ignoriraj grešku ako fajl ne postoji
+      console.log(`Markdown file not found for ${id}`);
+    }
 
     return NextResponse.json({ message: "Post deleted successfully" });
   } catch (error) {
@@ -190,3 +181,33 @@ export async function DELETE(
   }
 }
 
+// Osnovna konverzija HTML-a u Markdown
+function htmlToMarkdown(html: string): string {
+  let markdown = html;
+  
+  // Zamijeni HTML tagove s Markdown ekvivalentima
+  markdown = markdown.replace(/<p>/g, '').replace(/<\/p>/g, '\n\n');
+  markdown = markdown.replace(/<h1>/g, '# ').replace(/<\/h1>/g, '\n\n');
+  markdown = markdown.replace(/<h2>/g, '## ').replace(/<\/h2>/g, '\n\n');
+  markdown = markdown.replace(/<h3>/g, '### ').replace(/<\/h3>/g, '\n\n');
+  markdown = markdown.replace(/<h4>/g, '#### ').replace(/<\/h4>/g, '\n\n');
+  markdown = markdown.replace(/<strong>/g, '**').replace(/<\/strong>/g, '**');
+  markdown = markdown.replace(/<b>/g, '**').replace(/<\/b>/g, '**');
+  markdown = markdown.replace(/<em>/g, '*').replace(/<\/em>/g, '*');
+  markdown = markdown.replace(/<i>/g, '*').replace(/<\/i>/g, '*');
+  markdown = markdown.replace(/<u>/g, '').replace(/<\/u>/g, '');
+  markdown = markdown.replace(/<br\s*\/?>/g, '\n');
+  markdown = markdown.replace(/<ul>/g, '').replace(/<\/ul>/g, '\n');
+  markdown = markdown.replace(/<ol>/g, '').replace(/<\/ol>/g, '\n');
+  markdown = markdown.replace(/<li>/g, '- ').replace(/<\/li>/g, '\n');
+  markdown = markdown.replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g, '[$2]($1)');
+  markdown = markdown.replace(/<img[^>]+src="([^"]+)"[^>]*alt="([^"]*)"[^>]*>/g, '![$2]($1)');
+  
+  // Ukloni sve preostale HTML tagove
+  markdown = markdown.replace(/<[^>]+>/g, '');
+  
+  // Očisti višestruke prazne linije
+  markdown = markdown.replace(/\n{3,}/g, '\n\n');
+  
+  return markdown.trim();
+}

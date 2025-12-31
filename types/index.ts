@@ -18,9 +18,23 @@ export interface BlogPost {
   id: string;
   title: string;
   excerpt: string;
-  content: string;
+  content: string; // Markdown sadržaj (učitava se iz content/posts/[id].md)
   image: string;
   gallery?: string[]; // Galerija slika
+  author: string;
+  tags: string[];
+  category: string;
+  createdAt: string;
+  readTime: number;
+}
+
+// Metadata bez content polja (sprema se u JSON)
+export interface BlogPostMetadata {
+  id: string;
+  title: string;
+  excerpt: string;
+  image: string;
+  gallery?: string[];
   author: string;
   tags: string[];
   category: string;

@@ -5,6 +5,7 @@ import { mockBlogPosts } from "@/data/mockData";
 import { Clock, ArrowLeft } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 
 // Učitaj dinamičke blog postove
 async function getAllPosts() {
@@ -103,13 +104,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
           </div>
 
           <div className="prose prose-lg max-w-none dark:prose-invert">
-            <p className="text-xl text-gf-text-primary dark:text-neutral-300">
+            <p className="text-xl text-gf-text-primary dark:text-neutral-300 mb-8">
               {post.excerpt}
             </p>
-            <div
-              className="mt-8 text-gf-text-primary dark:text-neutral-300 prose prose-lg max-w-none dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
+            <div className="mt-8 text-gf-text-primary dark:text-neutral-300">
+              <MarkdownRenderer content={post.content} />
+            </div>
           </div>
 
           {/* Galerija slika */}

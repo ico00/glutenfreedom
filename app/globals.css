@@ -2,6 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Poboljšanja za Markdown renderiranje */
+  .prose {
+    @apply text-gf-text-primary dark:text-neutral-300;
+  }
+  
+  .prose p {
+    @apply mb-6 leading-relaxed text-base;
+  }
+  
+  .prose p:last-child {
+    @apply mb-0;
+  }
+  
+  .prose strong {
+    @apply font-semibold text-gf-text-primary dark:text-neutral-100;
+  }
+  
+  .prose em {
+    @apply italic;
+  }
+  
+  .prose a {
+    @apply text-gf-cta hover:text-gf-cta-hover no-underline;
+  }
+  
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    @apply text-gf-text-primary dark:text-neutral-100 font-bold;
+  }
+}
+
 /* Rich Text Editor Styles */
 [contenteditable][data-placeholder]:empty:before {
   content: attr(data-placeholder);
@@ -68,4 +102,3 @@ body {
     text-wrap: balance;
   }
 }
-

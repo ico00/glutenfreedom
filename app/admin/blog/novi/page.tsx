@@ -17,9 +17,9 @@ export default function NoviBlogPostPage() {
     content: "",
     image: null as File | null,
     gallery: [] as File[],
-    author: "",
     tags: "",
     category: "",
+    createdAt: new Date().toISOString().split("T")[0], // Default: današnji datum
   });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,9 +67,10 @@ export default function NoviBlogPostPage() {
       submitData.append("title", formData.title);
       submitData.append("excerpt", formData.excerpt);
       submitData.append("content", formData.content);
-      submitData.append("author", formData.author);
+      submitData.append("author", "Ivica Drusany");
       submitData.append("tags", JSON.stringify(formData.tags.split(",").map((t) => t.trim())));
       submitData.append("category", formData.category);
+      submitData.append("createdAt", formData.createdAt);
 
       if (formData.image) {
         submitData.append("image", formData.image);
@@ -242,22 +243,6 @@ export default function NoviBlogPostPage() {
             </div>
           </div>
 
-          {/* Autor */}
-          <div>
-            <label htmlFor="author" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Autor *
-            </label>
-            <input
-              type="text"
-              id="author"
-              required
-              value={formData.author}
-              onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              placeholder="Ime autora"
-            />
-          </div>
-
           {/* Kategorija */}
           <div>
             <label htmlFor="category" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
@@ -290,6 +275,24 @@ export default function NoviBlogPostPage() {
             />
             <p className="mt-1 text-xs text-gf-text-secondary dark:text-neutral-400">
               Odvoji tagove zarezom (npr. iskustvo, početak, savjeti)
+            </p>
+          </div>
+
+          {/* Datum */}
+          <div>
+            <label htmlFor="createdAt" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
+              Datum objave *
+            </label>
+            <input
+              type="date"
+              id="createdAt"
+              required
+              value={formData.createdAt}
+              onChange={(e) => setFormData({ ...formData, createdAt: e.target.value })}
+              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+            />
+            <p className="mt-1 text-xs text-gf-text-secondary dark:text-neutral-400">
+              Odaberi datum kada je post objavljen
             </p>
           </div>
 
