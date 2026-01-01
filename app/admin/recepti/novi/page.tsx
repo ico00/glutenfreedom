@@ -1,9 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { ArrowLeft, Upload, X, Search, Package } from "lucide-react";
+import { Product } from "@/types";
+import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+
+// Predefinirane kategorije za recepte
+const RECIPE_CATEGORIES = [
+  "Pekara",
+  "Deserti",
+  "Glavna jela",
+  "Predjela",
+  "Salate",
+  "Pizze",
+  "Torte i kolači",
+  "Brza hrana",
+  "Domaća jela",
+  "Zimnica",
+  "Napitci",
+  "Ostalo"
+];
 
 export default function NoviReceptPage() {
   const router = useRouter();
@@ -22,6 +40,9 @@ export default function NoviReceptPage() {
     tags: "",
     category: "",
   });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [showProductSearch, setShowProductSearch] = useState<number | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,6 +74,57 @@ export default function NoviReceptPage() {
     const newIngredients = [...formData.ingredients];
     newIngredients[index] = value;
     setFormData({ ...formData, ingredients: newIngredients });
+    setShowProductSearch(null);
+  };
+
+  // Učitaj proizvode
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const response = await fetch("/api/proizvodi", {
+          cache: 'no-store',
+        });
+        if (response.ok) {
+          const productsData = await response.json();
+          setProducts(productsData);
+        }
+      } catch (error) {
+        console.error("Error loading products:", error);
+      }
+    }
+    loadProducts();
+  }, []);
+
+  // Zatvori dropdown kada se klikne izvan
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showProductSearch !== null && !target.closest('.product-search-dropdown')) {
+        setShowProductSearch(null);
+        setProductSearchQuery("");
+      }
+    };
+
+    if (showProductSearch !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showProductSearch]);
+
+  // Filtriraj proizvode za pretraživanje
+  const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
+    product.brand.toLowerCase().includes(productSearchQuery.toLowerCase())
+  ).slice(0, 5); // Prikaži samo prvih 5 rezultata
+
+  const handleAddProductAsIngredient = (index: number, product: Product) => {
+    const newIngredients = [...formData.ingredients];
+    newIngredients[index] = `${product.name}${product.brand ? ` (${product.brand})` : ""}`;
+    setFormData({ ...formData, ingredients: newIngredients });
+    setShowProductSearch(null);
+    setProductSearchQuery("");
   };
 
   const handleAddInstruction = () => {
@@ -235,14 +307,19 @@ export default function NoviReceptPage() {
                   <label className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
                     Kategorija *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     required
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    placeholder="npr. pekara, deserti, glavna jela"
                     className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                  />
+                  >
+                    <option value="">Odaberi kategoriju</option>
+                    {RECIPE_CATEGORIES.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -324,24 +401,103 @@ export default function NoviReceptPage() {
 
             <div className="space-y-3">
               {formData.ingredients.map((ingredient, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    required
-                    value={ingredient}
-                    onChange={(e) => handleIngredientChange(index, e.target.value)}
-                    placeholder={`Sastojak ${index + 1}`}
-                    className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                  />
-                  {formData.ingredients.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveIngredient(index)}
-                      className="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
+                <div key={index} className="space-y-2">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        required
+                        value={ingredient}
+                        onChange={(e) => handleIngredientChange(index, e.target.value)}
+                        onFocus={() => setShowProductSearch(index)}
+                        placeholder={`Sastojak ${index + 1}`}
+                        className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                      />
+                      {showProductSearch === index && (
+                        <div className="product-search-dropdown absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
+                          <div className="border-b border-neutral-200 p-2 dark:border-neutral-700">
+                            <div className="relative flex items-center gap-2">
+                              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gf-text-secondary" />
+                              <input
+                                type="text"
+                                value={productSearchQuery}
+                                onChange={(e) => setProductSearchQuery(e.target.value)}
+                                placeholder="Pretraži proizvode..."
+                                className="flex-1 rounded-lg border border-neutral-300 bg-gf-bg-soft px-10 py-2 text-sm text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === "Escape") {
+                                    setShowProductSearch(null);
+                                    setProductSearchQuery("");
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowProductSearch(null);
+                                  setProductSearchQuery("");
+                                }}
+                                className="rounded-lg bg-red-500 p-2 text-white hover:bg-red-600 transition-colors"
+                                title="Zatvori"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                          {productSearchQuery && filteredProducts.length > 0 ? (
+                            <div className="max-h-60 overflow-y-auto">
+                              {filteredProducts.map((product) => (
+                                <button
+                                  key={product.id}
+                                  type="button"
+                                  onClick={() => handleAddProductAsIngredient(index, product)}
+                                  className="flex w-full items-center gap-3 border-b border-neutral-100 px-4 py-3 text-left transition-colors hover:bg-gf-bg-soft dark:border-neutral-700 dark:hover:bg-neutral-700"
+                                >
+                                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded">
+                                    <ImagePlaceholder
+                                      imageUrl={product.image}
+                                      alt={product.name}
+                                      emoji="🛒"
+                                      gradient="from-gf-safe/40 via-gf-cta/30 to-gf-safe/40"
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-medium text-gf-text-primary dark:text-neutral-100">
+                                      {product.name}
+                                    </div>
+                                    {product.brand && (
+                                      <div className="text-xs text-gf-text-secondary dark:text-neutral-400">
+                                        {product.brand}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Package className="h-4 w-4 text-gf-cta" />
+                                </button>
+                              ))}
+                            </div>
+                          ) : productSearchQuery ? (
+                            <div className="p-4 text-center text-sm text-gf-text-secondary dark:text-neutral-400">
+                              Nema proizvoda koji odgovaraju pretrazi
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center text-sm text-gf-text-secondary dark:text-neutral-400">
+                              Unesi tekst za pretraživanje proizvoda
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {formData.ingredients.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveIngredient(index)}
+                        className="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

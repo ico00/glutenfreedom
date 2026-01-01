@@ -6,21 +6,19 @@ import { Clock, ArrowLeft } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { GallerySection } from "@/components/GallerySection";
 
 // Učitaj dinamičke blog postove
 async function getAllPosts() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/blog`, {
-      cache: "no-store",
-    });
-    if (response.ok) {
-      const dynamicPosts = await response.json();
-      return dynamicPosts;
-    }
-  } catch {
-    // Ako ne uspije, koristi samo mock podatke
+    // Koristi direktno getAllBlogPosts umjesto fetch-a za server-side rendering
+    const { getAllBlogPosts } = await import("@/lib/blogUtils");
+    const dynamicPosts = await getAllBlogPosts();
+    return dynamicPosts;
+  } catch (error) {
+    console.error("Error loading blog posts:", error);
+    return [];
   }
-  return mockBlogPosts;
 }
 
 export async function generateStaticParams() {
@@ -63,7 +61,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <Link
           href="/blog"
-          className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-gf-cta hover:text-gf-cta-hover dark:text-gf-cta dark:hover:text-gf-cta-hover"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gf-cta hover:text-gf-cta-hover dark:text-gf-cta dark:hover:text-gf-cta-hover"
         >
           <ArrowLeft className="h-4 w-4" />
           Natrag na blog
@@ -72,10 +70,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
         <article>
           <div className="mb-8 aspect-video w-full overflow-hidden rounded-2xl">
             <ImagePlaceholder
-              imageUrl={post.image}
+              imageUrl={post.image || undefined}
               alt={post.title}
               emoji="📚"
               gradient="from-gf-safe/40 via-gf-cta/30 to-gf-safe/40"
+              priority
             />
           </div>
 
@@ -103,34 +102,22 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
             ))}
           </div>
 
-          <div className="prose prose-lg max-w-none dark:prose-invert">
-            <p className="text-xl text-gf-text-primary dark:text-neutral-300 mb-8">
+          {/* Kratki opis - istaknut */}
+          <div className="mb-8 rounded-lg border-l-4 border-gf-cta bg-gf-bg-soft/50 px-6 py-4 dark:bg-neutral-800/50">
+            <p className="text-xl font-semibold leading-relaxed text-gf-text-primary dark:text-neutral-100">
               {post.excerpt}
             </p>
-            <div className="mt-8 text-gf-text-primary dark:text-neutral-300">
+          </div>
+
+          <div className="prose prose-lg max-w-none dark:prose-invert">
+            <div className="text-gf-text-primary dark:text-neutral-300">
               <MarkdownRenderer content={post.content} />
             </div>
           </div>
 
           {/* Galerija slika */}
           {post.gallery && post.gallery.length > 0 && (
-            <div className="mt-12">
-              <h2 className="mb-6 text-2xl font-bold text-gf-text-primary dark:text-neutral-100">
-                Galerija
-              </h2>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {post.gallery.map((imageUrl, index) => (
-                  <div key={index} className="relative aspect-square w-full overflow-hidden rounded-lg">
-                    <ImagePlaceholder
-                      imageUrl={imageUrl}
-                      alt={`Galerija slika ${index + 1}`}
-                      emoji="📷"
-                      gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <GallerySection images={post.gallery} />
           )}
 
           <div className="mt-12">

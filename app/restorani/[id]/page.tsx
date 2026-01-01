@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { MapPin, Phone, Globe, ArrowLeft } from "lucide-react";
+import { MapPin, Phone, Globe, ArrowLeft, Facebook, Instagram } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { Restaurant } from "@/types";
 import { readFile } from "fs/promises";
@@ -105,14 +105,16 @@ export default async function RestaurantDetailPage({
         </Link>
 
         <article>
-          <div className="mb-8 aspect-video w-full overflow-hidden rounded-2xl">
-            <ImagePlaceholder
-              imageUrl={restaurant.image}
-              alt={restaurant.name}
-              emoji="🍽️"
-              gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
-            />
-          </div>
+          {restaurant.image && (
+            <div className="mb-8 aspect-video w-full overflow-hidden rounded-2xl">
+              <ImagePlaceholder
+                imageUrl={restaurant.image}
+                alt={restaurant.name}
+                emoji="🍽️"
+                gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
+              />
+            </div>
+          )}
 
           <div className="mb-6 flex items-center justify-between">
             <div>
@@ -134,7 +136,15 @@ export default async function RestaurantDetailPage({
                   Adresa
                 </p>
                 <p className="text-gf-text-secondary dark:text-neutral-400">
-                  {restaurant.address}
+                  {Array.isArray(restaurant.address) ? (
+                    <ul className="list-disc list-inside space-y-1">
+                      {restaurant.address.map((addr, index) => (
+                        <li key={index}>{addr}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    restaurant.address
+                  )}
                 </p>
               </div>
             </div>
@@ -156,21 +166,59 @@ export default async function RestaurantDetailPage({
               </div>
             )}
 
-            {restaurant.website && (
+            {(restaurant.website || restaurant.facebook || restaurant.instagram || restaurant.tiktok) && (
               <div className="flex items-start gap-3">
                 <Globe className="mt-1 h-5 w-5 text-gf-text-muted dark:text-neutral-400" />
-                <div>
-                  <p className="font-medium text-gf-text-primary dark:text-neutral-100">
-                    Web stranica
+                <div className="flex-1">
+                  <p className="mb-2 font-medium text-gf-text-primary dark:text-neutral-100">
+                    Društvene mreže
                   </p>
-                  <a
-                    href={restaurant.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gf-cta hover:text-gf-cta-hover dark:text-gf-cta dark:hover:text-gf-cta-hover"
-                  >
-                    {restaurant.website}
-                  </a>
+                  <div className="flex flex-wrap gap-3">
+                    {restaurant.website && (
+                      <a
+                        href={restaurant.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg bg-gf-cta/10 px-3 py-2 text-sm text-gf-cta transition-colors hover:bg-gf-cta/20 dark:bg-gf-cta/20 dark:hover:bg-gf-cta/30"
+                      >
+                        <Globe className="h-4 w-4" />
+                        Website
+                      </a>
+                    )}
+                    {restaurant.facebook && (
+                      <a
+                        href={restaurant.facebook}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-500/10 px-3 py-2 text-sm text-blue-600 transition-colors hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:hover:bg-blue-500/30"
+                      >
+                        <Facebook className="h-4 w-4" />
+                        Facebook
+                      </a>
+                    )}
+                    {restaurant.instagram && (
+                      <a
+                        href={restaurant.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg bg-pink-500/10 px-3 py-2 text-sm text-pink-600 transition-colors hover:bg-pink-500/20 dark:bg-pink-500/20 dark:text-pink-400 dark:hover:bg-pink-500/30"
+                      >
+                        <Instagram className="h-4 w-4" />
+                        Instagram
+                      </a>
+                    )}
+                    {restaurant.tiktok && (
+                      <a
+                        href={restaurant.tiktok}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg bg-black/10 px-3 py-2 text-sm text-black transition-colors hover:bg-black/20 dark:bg-neutral-700/20 dark:text-neutral-300 dark:hover:bg-neutral-700/30"
+                      >
+                        <span className="text-xs font-bold">TT</span>
+                        TikTok
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

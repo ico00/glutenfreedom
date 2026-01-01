@@ -11,7 +11,7 @@
       ""
     ],
     "certified": true,
-    "image": "/images/products/6a315573-6aa5-4a92-b419-8ae0ee3d1346-357327d81e7592a6661fbca6215a61db162ccd438802a608d05fb668bf373162.jpeg",
+    "image": "/images/products/6a315573-6aa5-4a92-b419-8ae0ee3d1346-357327d81e7592a6661fbca6215a61db162ccd438802a608d05fb668bf373162-2.jpeg",
     "store": "Konzum",
     "price": 3.99,
     "weight": 500
@@ -20,7 +20,7 @@
     "id": "1",
     "name": "Dominos kocke",
     "description": "Slatkiš koji se pojavljuje samo u božićno doba",
-    "brand": "Schär",
+    "brand": "Alnavit",
     "category": "slatkiši",
     "tags": [
       "slatkiši",
@@ -31,5 +31,22 @@
     "weight": 140,
     "image": "/images/products/1-Bio_Dominosteine_Alnavit_glutenfrei.jpg",
     "price": 5.5
+  },
+  {
+    "id": "89ad3ce3-13ae-4328-8ae8-21010decd0f5",
+    "name": "Stobi Flips",
+    "description": "Jedini normalni smokići s kikirikijem bez glutena. Na žalost teško se mogu naći na policama dućana. Bez certifikata, ali na stranicama proizvođača se može naći da rade na tome.",
+    "brand": "Vitaminka",
+    "category": "snack",
+    "store": "Spar",
+    "tags": [
+      "grickalice",
+      "smoki",
+      "kikiriki"
+    ],
+    "certified": false,
+    "price": 2,
+    "weight": 40,
+    "image": "/images/products/89ad3ce3-13ae-4328-8ae8-21010decd0f5-IMG_9215.jpeg"
   }
 ]

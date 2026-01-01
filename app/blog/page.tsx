@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { mockBlogPosts } from "@/data/mockData";
-import { Clock, Search, BookOpen } from "lucide-react";
+import { Clock, Search, BookOpen, Calendar } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { BlogPost } from "@/types";
 
@@ -33,7 +33,14 @@ export default function BlogPage() {
     loadPosts();
   }, []);
 
-  const categories = ["sve", ...Array.from(new Set(allPosts.map((p) => p.category)))];
+  // Ekstraktuj sve kategorije iz postova (podržava i string i array)
+  const allCategories = allPosts.flatMap((post) => {
+    if (Array.isArray(post.category)) {
+      return post.category;
+    }
+    return post.category ? [post.category] : [];
+  });
+  const categories = ["sve", ...Array.from(new Set(allCategories))];
 
   const filteredPosts = useMemo(() => {
     const filtered = allPosts.filter((post) => {
@@ -42,7 +49,11 @@ export default function BlogPage() {
         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchesCategory = selectedCategory === "sve" || post.category === selectedCategory;
+      // Provjeri da li post ima odabranu kategoriju (podržava i string i array)
+      const postCategories = Array.isArray(post.category) 
+        ? post.category 
+        : post.category ? [post.category] : [];
+      const matchesCategory = selectedCategory === "sve" || postCategories.includes(selectedCategory);
 
       return matchesSearch && matchesCategory;
     });
@@ -119,7 +130,7 @@ export default function BlogPage() {
                 <Link href={`/blog/${post.id}`}>
                   <div className="relative aspect-video w-full overflow-hidden">
                     <ImagePlaceholder
-                      imageUrl={post.image || undefined}
+                      imageUrl={post.image && post.image.trim() !== "" ? post.image : undefined}
                       alt={post.title}
                       emoji={["📚", "💡", "✨"][index % 3]}
                       gradient="from-gf-safe/40 via-gf-cta/30 to-gf-safe/40"
@@ -131,9 +142,21 @@ export default function BlogPage() {
                     />
                   </div>
                   <div className="p-6">
-                    <div className="mb-3 flex items-center gap-2 text-sm text-gf-text-muted dark:text-neutral-400">
-                      <Clock className="h-4 w-4" />
-                      <span>{post.readTime} min čitanja</span>
+                    <div className="mb-3 flex items-center gap-4 text-sm text-gf-text-muted dark:text-neutral-400">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>{post.readTime} min čitanja</span>
+                      </div>
+                      {post.createdAt && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{new Date(post.createdAt).toLocaleDateString("hr-HR", { 
+                            day: "numeric", 
+                            month: "long", 
+                            year: "numeric" 
+                          })}</span>
+                        </div>
+                      )}
                     </div>
                     <h3 className="mb-3 text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
                       {post.title}

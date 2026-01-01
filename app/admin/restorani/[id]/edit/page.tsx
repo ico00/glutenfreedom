@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload, X, Plus } from "lucide-react";
+import { Restaurant } from "@/types";
 
-export default function NoviRestoranPage() {
+export default function EditRestoranPage() {
   const router = useRouter();
+  const params = useParams();
+  const restaurantId = params.id as string;
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -21,17 +25,67 @@ export default function NoviRestoranPage() {
     cuisine: "",
     image: null as File | null,
   });
+  const [imageRemoved, setImageRemoved] = useState(false);
+
+  useEffect(() => {
+    async function loadRestaurant() {
+      try {
+        const response = await fetch(`/api/restorani/${restaurantId}`, {
+          cache: 'no-store',
+        });
+        if (response.ok) {
+          const restaurant: Restaurant = await response.json();
+          // Konvertiraj address u array ako je string (backward compatibility)
+          const addresses = Array.isArray(restaurant.address) 
+            ? restaurant.address 
+            : restaurant.address 
+              ? [restaurant.address] 
+              : [""];
+          
+          setFormData({
+            name: restaurant.name,
+            description: restaurant.description || "",
+            addresses: addresses,
+            phone: restaurant.phone || "",
+            website: restaurant.website || "",
+            facebook: restaurant.facebook || "",
+            instagram: restaurant.instagram || "",
+            tiktok: restaurant.tiktok || "",
+            cuisine: Array.isArray(restaurant.cuisine) ? restaurant.cuisine[0] || "" : restaurant.cuisine || "",
+            image: null,
+          });
+          setImagePreview(restaurant.image || null);
+        } else {
+          console.error("Failed to load restaurant:", response.status, response.statusText);
+          router.push("/admin?error=restaurant-not-found");
+        }
+      } catch (error) {
+        console.error("Error loading restaurant:", error);
+        router.push("/admin?error=restaurant-load-failed");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadRestaurant();
+  }, [restaurantId, router]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setFormData({ ...formData, image: file });
+      setImageRemoved(false);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setFormData({ ...formData, image: null });
+    setImageRemoved(true);
   };
 
   const handleAddAddress = () => {
@@ -75,27 +129,36 @@ export default function NoviRestoranPage() {
 
       if (formData.image) {
         submitData.append("image", formData.image);
+      } else if (imageRemoved) {
+        submitData.append("image_removed", "true");
       }
 
-      const response = await fetch("/api/restorani", {
-        method: "POST",
+      const response = await fetch(`/api/restorani/${restaurantId}`, {
+        method: "PUT",
         body: submitData,
       });
 
       if (response.ok) {
-        router.push("/admin");
-        router.refresh();
+        router.push("/admin?success=restoran-azuriran");
       } else {
         const error = await response.json();
         alert(`Greška: ${error.message || "Nešto je pošlo po zlu"}`);
       }
     } catch (error) {
-      console.error("Error submitting restaurant:", error);
-      alert("Greška pri slanju podataka");
+      console.error("Error:", error);
+      alert("Greška pri ažuriranju restorana");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gf-bg py-12 dark:bg-neutral-900 flex items-center justify-center">
+        <p className="text-gf-text-primary dark:text-neutral-300">Učitavanje restorana...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gf-bg py-12 dark:bg-neutral-900">
@@ -109,7 +172,7 @@ export default function NoviRestoranPage() {
         </Link>
 
         <h1 className="mb-8 text-4xl font-bold text-gf-text-primary dark:text-neutral-100">
-          Dodaj novi restoran
+          Uredi restoran
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -287,16 +350,33 @@ export default function NoviRestoranPage() {
 
           {/* Slika */}
           <div>
-            <label htmlFor="image" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
+            <label className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
               Slika
             </label>
-            <div className="flex items-center gap-4">
+            <div className="space-y-4">
+              {imagePreview && (
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="h-full w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute right-2 top-2 rounded-full bg-red-500 p-2 text-white hover:bg-red-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
               <label
                 htmlFor="image"
                 className="flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-gf-text-primary transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
               >
                 <Upload className="h-4 w-4" />
-                Odaberi sliku
+                {imagePreview ? "Promijeni sliku" : "Odaberi sliku"}
               </label>
               <input
                 type="file"
@@ -305,15 +385,6 @@ export default function NoviRestoranPage() {
                 onChange={handleImageChange}
                 className="hidden"
               />
-              {imagePreview && (
-                <div className="relative h-20 w-20">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="h-full w-full rounded-lg object-cover"
-                  />
-                </div>
-              )}
             </div>
           </div>
 
@@ -324,7 +395,7 @@ export default function NoviRestoranPage() {
               disabled={isSubmitting}
               className="rounded-lg bg-gf-cta px-6 py-3 font-semibold text-white transition-all hover:bg-gf-cta-hover disabled:opacity-50"
             >
-              {isSubmitting ? "Spremanje..." : "Spremi restoran"}
+              {isSubmitting ? "Spremanje..." : "Spremi promjene"}
             </button>
             <Link
               href="/admin"

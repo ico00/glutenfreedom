@@ -7,23 +7,24 @@ import {
   ChefHat, 
   BookOpen, 
   UtensilsCrossed, 
-  Store, 
+  Store as StoreIcon, 
   Package,
   ArrowLeft,
   Plus,
   Edit,
   Trash2
 } from "lucide-react";
-import { BlogPost, Product, Restaurant, Recipe } from "@/types";
+import { BlogPost, Product, Restaurant, Recipe, Store } from "@/types";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 
 export default function AdminPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"recipes" | "blog" | "restaurants" | "products">("recipes");
+  const [activeTab, setActiveTab] = useState<"recipes" | "blog" | "restaurants" | "products" | "stores">("recipes");
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Učitaj podatke kada se tab promijeni
@@ -36,6 +37,8 @@ export default function AdminPage() {
       loadProducts();
     } else if (activeTab === "restaurants") {
       loadRestaurants();
+    } else if (activeTab === "stores") {
+      loadStores();
     }
   }, [activeTab]);
 
@@ -50,7 +53,11 @@ export default function AdminPage() {
       const response = await fetch("/api/blog");
       if (response.ok) {
         const posts = await response.json();
-        setBlogPosts(posts);
+        // Sortiraj po ID-u (najnoviji prvi - obrnuti leksikografski redoslijed)
+        const sortedPosts = posts.sort((a: BlogPost, b: BlogPost) => {
+          return b.id.localeCompare(a.id); // Najnoviji prvi (obrnuti leksikografski)
+        });
+        setBlogPosts(sortedPosts);
       }
     } catch (error) {
       console.error("Error loading blog posts:", error);
@@ -114,6 +121,23 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Error loading recipes:", error);
       setRecipes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function loadStores() {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/ducani", {
+        cache: 'no-store',
+      });
+      if (response.ok) {
+        const storesData = await response.json();
+        setStores(storesData);
+      }
+    } catch (error) {
+      console.error("Error loading stores:", error);
     } finally {
       setIsLoading(false);
     }
@@ -209,6 +233,29 @@ export default function AdminPage() {
     }
   }
 
+  async function handleDeleteStore(id: string) {
+    if (!confirm("Jesi li siguran da želiš obrisati ovaj dućan?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/ducani/${id}`, {
+        method: "DELETE",
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        await loadStores();
+        router.refresh();
+      } else {
+        alert("Greška pri brisanju dućana");
+      }
+    } catch (error) {
+      console.error("Error deleting store:", error);
+      alert("Greška pri brisanju dućana");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gf-bg py-12 dark:bg-neutral-900">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -236,6 +283,7 @@ export default function AdminPage() {
               { id: "blog", label: "Blog", icon: BookOpen },
               { id: "restaurants", label: "Restorani", icon: UtensilsCrossed },
               { id: "products", label: "Proizvodi", icon: Package },
+              { id: "stores", label: "Dućani", icon: StoreIcon },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -382,7 +430,7 @@ export default function AdminPage() {
                           {post.excerpt.substring(0, 100)}...
                         </p>
                         <div className="mt-2 flex gap-2 text-xs text-gf-text-muted dark:text-neutral-500">
-                          <span>Kategorija: {post.category}</span>
+                          <span>Kategorija: {Array.isArray(post.category) ? post.category.join(", ") : post.category}</span>
                           <span>•</span>
                           <span>Autor: {post.author}</span>
                           <span>•</span>
@@ -446,7 +494,7 @@ export default function AdminPage() {
                           {restaurant.description || "Bez opisa"}
                         </p>
                         <div className="mt-2 flex gap-2 text-xs text-gf-text-muted dark:text-neutral-500">
-                          <span>Adresa: {restaurant.address}</span>
+                          <span>Adresa: {Array.isArray(restaurant.address) ? restaurant.address.join(", ") : restaurant.address}</span>
                           {restaurant.cuisine && restaurant.cuisine.length > 0 && (
                             <>
                               <span>•</span>
@@ -552,6 +600,88 @@ export default function AdminPage() {
                         </Link>
                         <button
                           onClick={() => handleDeleteProduct(product.id)}
+                          className="rounded-lg bg-gf-risk/10 p-2 text-gf-risk transition-colors hover:bg-gf-risk/20 dark:bg-gf-risk/20 dark:hover:bg-gf-risk/30"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "stores" && (
+            <div>
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gf-text-primary dark:text-neutral-100">
+                  Dućani
+                </h2>
+                <Link
+                  href="/admin/ducani/novi"
+                  className="inline-flex items-center gap-2 rounded-lg bg-gf-cta px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-gf-cta-hover"
+                >
+                  <Plus className="h-4 w-4" />
+                  Dodaj novi dućan
+                </Link>
+              </div>
+
+              {isLoading ? (
+                <p className="text-gf-text-secondary dark:text-neutral-400">Učitavanje...</p>
+              ) : stores.length === 0 ? (
+                <p className="text-gf-text-secondary dark:text-neutral-400">
+                  Nema dućana. Klikni na "Dodaj novi dućan" da kreneš.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {stores.map((store) => (
+                    <div
+                      key={store.id}
+                      className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"
+                    >
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+                          <ImagePlaceholder
+                            imageUrl={store.image}
+                            alt={store.name}
+                            emoji="🏪"
+                            gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gf-text-primary dark:text-neutral-100">
+                            {store.name}
+                          </h3>
+                          <p className="mt-1 text-sm text-gf-text-secondary dark:text-neutral-400">
+                            {store.description || "Bez opisa"}
+                          </p>
+                          <div className="mt-2 flex gap-2 text-xs text-gf-text-muted dark:text-neutral-500">
+                            <span>Adresa: {store.address}</span>
+                            {store.phone && (
+                              <>
+                                <span>•</span>
+                                <span>Tel: {store.phone}</span>
+                              </>
+                            )}
+                            {store.type && (
+                              <>
+                                <span>•</span>
+                                <span>Tip: {store.type}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/admin/ducani/${store.id}/edit`}
+                          className="rounded-lg bg-gf-cta/10 p-2 text-gf-cta transition-colors hover:bg-gf-cta/20 dark:bg-gf-cta/20 dark:hover:bg-gf-cta/30"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteStore(store.id)}
                           className="rounded-lg bg-gf-risk/10 p-2 text-gf-risk transition-colors hover:bg-gf-risk/20 dark:bg-gf-risk/20 dark:hover:bg-gf-risk/30"
                         >
                           <Trash2 className="h-4 w-4" />

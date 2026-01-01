@@ -70,14 +70,35 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const imageFile = formData.get("image") as File | null;
 
+    // Parsiraj adrese (može biti array ili single value za backward compatibility)
+    const addresses: string[] = [];
+    let index = 0;
+    while (formData.get(`addresses[${index}]`)) {
+      const address = formData.get(`addresses[${index}]`) as string;
+      if (address.trim()) {
+        addresses.push(address.trim());
+      }
+      index++;
+    }
+    // Fallback: ako nema addresses array, provjeri staru "address" vrijednost
+    if (addresses.length === 0) {
+      const oldAddress = formData.get("address") as string;
+      if (oldAddress) {
+        addresses.push(oldAddress);
+      }
+    }
+
     const cuisineValue = formData.get("cuisine") as string;
     const newRestaurant: Restaurant = {
       id: randomUUID(),
       name: formData.get("name") as string,
       description: formData.get("description") as string || "",
-      address: formData.get("address") as string,
+      address: addresses.length === 1 ? addresses[0] : addresses, // Ako je jedna adresa, spremi kao string za backward compatibility
       phone: formData.get("phone") as string || undefined,
       website: formData.get("website") as string || undefined,
+      facebook: formData.get("facebook") as string || undefined,
+      instagram: formData.get("instagram") as string || undefined,
+      tiktok: formData.get("tiktok") as string || undefined,
       cuisine: cuisineValue ? [cuisineValue] : [],
       image: undefined,
     };

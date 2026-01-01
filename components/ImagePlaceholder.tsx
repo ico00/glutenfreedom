@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ImagePlaceholderProps {
   icon?: LucideIcon;
@@ -11,6 +11,7 @@ interface ImagePlaceholderProps {
   emoji?: string;
   imageUrl?: string;
   alt?: string;
+  priority?: boolean;
 }
 
 const APP_ICON = "/favicon.ico"; // Fallback na ikonu aplikacije
@@ -20,16 +21,21 @@ export function ImagePlaceholder({
   gradient = "from-gf-safe/30 via-gf-cta/20 to-gf-safe/30",
   emoji,
   imageUrl,
-  alt = "Image"
+  alt = "Image",
+  priority = false
 }: ImagePlaceholderProps) {
   const [imageError, setImageError] = useState(false);
   // Provjeri da li imageUrl postoji i nije prazan string
   const hasValidImageUrl = imageUrl && imageUrl.trim() !== "";
-  const [showFallback, setShowFallback] = useState(!hasValidImageUrl);
   const [iconError, setIconError] = useState(false);
 
+  // Resetiraj imageError kada se imageUrl promijeni
+  useEffect(() => {
+    setImageError(false);
+  }, [imageUrl]);
+
   // Ako postoji stvarna slika i nije došlo do greške, prikaži je
-  if (hasValidImageUrl && !imageError && !showFallback) {
+  if (hasValidImageUrl && !imageError) {
     return (
       <div className="relative h-full w-full overflow-hidden">
         <motion.div
@@ -44,13 +50,10 @@ export function ImagePlaceholder({
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            unoptimized
+            priority={priority}
             onError={() => {
               setImageError(true);
-              setShowFallback(true);
-            }}
-            onLoad={() => {
-              // Ako se slika uspješno učita, osiguraj da fallback nije prikazan
-              setShowFallback(false);
             }}
           />
         </motion.div>

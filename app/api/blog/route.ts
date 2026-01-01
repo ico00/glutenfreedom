@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir, readFile } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
-import { randomUUID } from "crypto";
 import { BlogPost, BlogPostMetadata } from "@/types";
 import { mockBlogPosts } from "@/data/mockData";
 import {
@@ -46,6 +45,50 @@ export async function GET() {
   return NextResponse.json(validDynamicPosts);
 }
 
+// Funkcija za generiranje slug-a iz naslova
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Ukloni sve znakove osim slova, brojeva, razmaka i crtica
+    .replace(/[\s_-]+/g, '-') // Zamijeni razmake, podvlake i višestruke crtice s jednom crticom
+    .replace(/^-+|-+$/g, ''); // Ukloni crtice s početka i kraja
+}
+
+// Generiraj ID u formatu yymmdd-naslov
+function generatePostId(title: string, createdAt: string): string {
+  // Parsiraj datum
+  const date = new Date(createdAt);
+  const year = date.getFullYear().toString().slice(-2); // Zadnje 2 znamenke godine
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Mjesec s vodećom nulom
+  const day = date.getDate().toString().padStart(2, '0'); // Dan s vodećom nulom
+  
+  // Kreiraj slug iz naslova
+  const slug = slugify(title);
+  
+  // Kombiniraj datum i slug
+  return `${year}${month}${day}-${slug}`;
+}
+
+// Provjeri da li ID već postoji i dodaj broj ako treba
+async function ensureUniquePostId(baseId: string): Promise<string> {
+  const metadata = await readBlogMetadata();
+  let postId = baseId;
+  let counter = 1;
+  
+  // Provjeri da li ID već postoji
+  while (metadata.some((post) => post.id === postId)) {
+    // Ako postoji, dodaj broj na kraj
+    const parts = baseId.split('-');
+    const slug = parts.slice(1).join('-'); // Sve osim datuma
+    const datePart = parts[0];
+    postId = `${datePart}-${slug}-${counter}`;
+    counter++;
+  }
+  
+  return postId;
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
@@ -57,11 +100,29 @@ export async function POST(request: Request) {
     // Ako je HTML, konvertiraj u Markdown (osnovna konverzija)
     content = htmlToMarkdown(content);
 
-    const postId = randomUUID();
+    const title = formData.get("title") as string;
+    const createdAt = (formData.get("createdAt") as string) || new Date().toISOString().split("T")[0];
+    
+    // Generiraj ID u formatu yymmdd-naslov
+    const basePostId = generatePostId(title, createdAt);
+    const postId = await ensureUniquePostId(basePostId);
+    
     const readTime = calculateReadTime(content);
 
     // Spremi Markdown sadržaj u zaseban fajl
     await writePostContent(postId, content);
+
+    // Parsiraj kategorije (može biti string ili JSON array)
+    const categoryData = formData.get("category") as string;
+    let category: string | string[];
+    try {
+      category = JSON.parse(categoryData); // Pokušaj parsirati kao JSON array
+      if (!Array.isArray(category)) {
+        category = categoryData; // Ako nije array, koristi kao string (backward compatibility)
+      }
+    } catch {
+      category = categoryData; // Ako parsing ne uspije, koristi kao string
+    }
 
     // Kreiraj metadata objekt (bez content polja)
     const metadata: BlogPostMetadata = {
@@ -72,7 +133,7 @@ export async function POST(request: Request) {
       gallery: [], // Will be updated after gallery upload
       author: "Ivica Drusany", // Fiksni autor
       tags: JSON.parse(formData.get("tags") as string),
-      category: formData.get("category") as string,
+      category: category,
       readTime: readTime,
       createdAt: (formData.get("createdAt") as string) || new Date().toISOString().split("T")[0],
     };
@@ -143,7 +204,13 @@ function htmlToMarkdown(html: string): string {
   markdown = markdown.replace(/<ol>/g, '').replace(/<\/ol>/g, '\n');
   markdown = markdown.replace(/<li>/g, '- ').replace(/<\/li>/g, '\n');
   markdown = markdown.replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g, '[$2]($1)');
-  markdown = markdown.replace(/<img[^>]+src="([^"]+)"[^>]*alt="([^"]*)"[^>]*>/g, '![$2]($1)');
+  // Zadrži align atribut za slike
+  markdown = markdown.replace(/<img[^>]+src="([^"]+)"[^>]*(?:align="([^"]*)")?[^>]*alt="([^"]*)"[^>]*>/g, (match, src, align, alt) => {
+    if (align) {
+      return `![${alt || ""}](${src} "align:${align}")`;
+    }
+    return `![${alt || ""}](${src})`;
+  });
   
   // Ukloni sve preostale HTML tagove
   markdown = markdown.replace(/<[^>]+>/g, '');

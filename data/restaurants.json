@@ -9,6 +9,37 @@
     "location": {
       "lat": 45.80554,
       "lng": 15.97601
-    }
+    },
+    "image": "/images/restaurants/8815e523-652b-4804-a313-7cf4f6988387-57486209_3122043527809613_6883804051079692288_n.png"
+  },
+  {
+    "id": "4b24123a-81a1-409f-b353-4c4361d14274",
+    "name": "Melt",
+    "description": "",
+    "address": "Dalmatinska ulica 5, Zagreb",
+    "cuisine": [],
+    "image": "/images/restaurants/4b24123a-81a1-409f-b353-4c4361d14274-323138325_2226796797527806_3241914372850807715_n.jpg"
+  },
+  {
+    "id": "47b9c170-d452-4e59-88ac-2d4ffb07df2a",
+    "name": "KATA gluten free",
+    "description": "",
+    "address": [
+      "Petrinjska 29, Zagreb",
+      "Martićeva 15, Zagreb"
+    ],
+    "phone": "091/614-3412",
+    "cuisine": [],
+    "image": "/images/restaurants/47b9c170-d452-4e59-88ac-2d4ffb07df2a-475981608_1039517878202820_421313515293331235_n.jpg",
+    "facebook": "https://www.facebook.com/KATAglutenfree"
+  },
+  {
+    "id": "28d220a1-acdf-4a26-b30d-4c18c3fa913e",
+    "name": "Franko’s Gluten Free",
+    "description": "Bezglutenci, pažnja! 📣 Franko’s od sada u ponudi ima 13 gluten-free pizza. U istraživanje i eksperimentiranje s recepturom uložili su 8 mjeseci dok nisu došli do savršenih omjera… i mjera opreza. ",
+    "address": "Samo dostava",
+    "website": "https://glovoapp.com/hr/hr/zagreb/stores/frankos-gluten-free-zag",
+    "cuisine": [],
+    "image": "/images/restaurants/28d220a1-acdf-4a26-b30d-4c18c3fa913e-69dab86e5bc651e74a89fdc45d193d7d7f27d3b4cee6ac3b2c5d8bd1893cb3c3.png"
   }
 ]

@@ -107,9 +107,20 @@ export function RestaurantsPreview() {
                   <p className="mb-4 line-clamp-2 text-sm text-gf-text-secondary dark:text-neutral-400">
                     {restaurant.description}
                   </p>
-                  <div className="mb-4 flex items-center gap-2 text-sm text-gf-text-muted dark:text-neutral-400">
-                    <MapPin className="h-4 w-4 flex-shrink-0" />
-                    <span className="line-clamp-1">{restaurant.address}</span>
+                  <div className="mb-4 space-y-1 text-sm text-gf-text-muted dark:text-neutral-400">
+                    {Array.isArray(restaurant.address) ? (
+                      restaurant.address.map((addr, addrIndex) => (
+                        <div key={addrIndex} className="flex items-start gap-2">
+                          <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                          <span className="line-clamp-1">{addr}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 flex-shrink-0" />
+                        <span className="line-clamp-1">{restaurant.address}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="mb-4 flex flex-wrap gap-2">
                     {restaurant.cuisine.slice(0, 2).map((cuisine, cuisineIndex) => (

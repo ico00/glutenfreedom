@@ -38,7 +38,7 @@ export interface BlogPost {
   gallery?: string[]; // Galerija slika
   author: string;
   tags: string[];
-  category: string;
+  category: string | string[]; // Podržava i string (backward compatibility) i array (multiple categories)
   createdAt: string;
   readTime: number;
 }
@@ -52,7 +52,7 @@ export interface BlogPostMetadata {
   gallery?: string[];
   author: string;
   tags: string[];
-  category: string;
+  category: string | string[]; // Podržava i string (backward compatibility) i array (multiple categories)
   createdAt: string;
   readTime: number;
 }
@@ -61,9 +61,12 @@ export interface Restaurant {
   id: string;
   name: string;
   description: string;
-  address: string;
+  address: string | string[]; // Podržava i string (backward compatibility) i array
   phone?: string;
   website?: string;
+  facebook?: string;
+  instagram?: string;
+  tiktok?: string;
   cuisine: string[];
   priceRange?: "€" | "€€" | "€€€"; // Opcionalno - uklonjeno iz forme
   rating?: number; // Opcionalno - uklonjeno iz forme

@@ -6,6 +6,19 @@ import Link from "next/link";
 import { ArrowLeft, Upload, X, Plus } from "lucide-react";
 import { RichTextEditor } from "@/components/RichTextEditor";
 
+// Predefinirane kategorije za blog postove
+const BLOG_CATEGORIES = [
+  "Iskustva",
+  "Savjeti",
+  "Vijesti",
+  "Recepti",
+  "Zdravlje",
+  "Dijagnoza",
+  "Proizvodi",
+  "Restorani",
+  "Ostalo"
+];
+
 export default function NoviBlogPostPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,10 +30,11 @@ export default function NoviBlogPostPage() {
     content: "",
     image: null as File | null,
     gallery: [] as File[],
-    tags: "",
-    category: "",
+    tags: [] as string[], // Array tagova
+    category: [] as string[], // Array kategorija
     createdAt: new Date().toISOString().split("T")[0], // Default: današnji datum
   });
+  const [newTag, setNewTag] = useState("");
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -60,6 +74,19 @@ export default function NoviBlogPostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validacija: barem jedna kategorija mora biti odabrana
+    if (formData.category.length === 0) {
+      alert("Odaberi barem jednu kategoriju");
+      return;
+    }
+    
+    // Validacija: barem jedan tag mora biti dodan
+    if (formData.tags.length === 0) {
+      alert("Dodaj barem jedan tag");
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -68,8 +95,8 @@ export default function NoviBlogPostPage() {
       submitData.append("excerpt", formData.excerpt);
       submitData.append("content", formData.content);
       submitData.append("author", "Ivica Drusany");
-      submitData.append("tags", JSON.stringify(formData.tags.split(",").map((t) => t.trim())));
-      submitData.append("category", formData.category);
+      submitData.append("tags", JSON.stringify(formData.tags)); // Pošalji kao JSON array
+      submitData.append("category", JSON.stringify(formData.category)); // Pošalji kao JSON array
       submitData.append("createdAt", formData.createdAt);
 
       if (formData.image) {
@@ -245,18 +272,43 @@ export default function NoviBlogPostPage() {
 
           {/* Kategorija */}
           <div>
-            <label htmlFor="category" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Kategorija *
+            <label className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
+              Kategorije * (možeš odabrati više)
             </label>
-            <input
-              type="text"
-              id="category"
-              required
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              placeholder="npr. iskustva, savjeti, vijesti"
-            />
+            <div className="flex flex-wrap gap-2">
+              {BLOG_CATEGORIES.map((category) => {
+                const isSelected = formData.category.includes(category);
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setFormData({
+                          ...formData,
+                          category: formData.category.filter((c) => c !== category),
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          category: [...formData.category, category],
+                        });
+                      }
+                    }}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                      isSelected
+                        ? "bg-gf-cta text-white hover:bg-gf-cta-hover"
+                        : "bg-gf-bg-soft text-gf-text-primary hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                );
+              })}
+            </div>
+            {formData.category.length === 0 && (
+              <p className="mt-2 text-xs text-gf-risk">Odaberi barem jednu kategoriju</p>
+            )}
           </div>
 
           {/* Tagovi */}

@@ -12,6 +12,7 @@ import {
   Palette,
   List,
   Link as LinkIcon,
+  Image as ImageIcon,
 } from "lucide-react";
 
 interface RichTextEditorProps {
@@ -223,6 +224,95 @@ export function RichTextEditor({
         >
           <LinkIcon className="h-4 w-4" />
         </button>
+
+        <div className="h-6 w-px bg-neutral-300 dark:bg-neutral-600" />
+
+        {/* Image */}
+        <div className="relative">
+          <input
+            type="file"
+            accept="image/*"
+            id="image-upload-input"
+            className="absolute inset-0 w-full opacity-0 cursor-pointer"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+
+              const input = e.target as HTMLInputElement;
+              const button = input.parentElement;
+
+              // Prikaži loading state
+              if (button) {
+                button.style.opacity = "0.5";
+                button.style.pointerEvents = "none";
+              }
+
+              try {
+                // Upload sliku
+                const uploadData = new FormData();
+                uploadData.append("image", file);
+
+                const uploadResponse = await fetch("/api/blog/upload-image", {
+                  method: "POST",
+                  body: uploadData,
+                });
+
+                if (!uploadResponse.ok) {
+                  const errorData = await uploadResponse.json().catch(() => ({}));
+                  throw new Error(errorData.message || "Greška pri uploadu slike");
+                }
+
+                const result = await uploadResponse.json();
+                const url = result.url;
+
+                if (!url) {
+                  throw new Error("Nije dobiven URL slike");
+                }
+
+                // Pitaj za poziciju
+                const align = prompt("Pozicija slike (left/right/center/full):", "full") || "full";
+
+                // Umetni sliku u editor
+                if (editorRef.current) {
+                  const img = document.createElement("img");
+                  img.src = url;
+                  img.alt = "";
+                  img.style.maxWidth = "100%";
+                  img.style.height = "auto";
+                  if (align && align !== "full") {
+                    img.setAttribute("align", align);
+                  }
+                  const selection = window.getSelection();
+                  if (selection && selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    range.insertNode(img);
+                  } else {
+                    editorRef.current.appendChild(img);
+                  }
+                  updateContent();
+                  editorRef.current.focus();
+                }
+              } catch (error) {
+                console.error("Error uploading image:", error);
+                alert(`Greška pri uploadu slike: ${error instanceof Error ? error.message : "Nepoznata greška"}`);
+              } finally {
+                // Resetiraj input i button state
+                input.value = "";
+                if (button) {
+                  button.style.opacity = "1";
+                  button.style.pointerEvents = "auto";
+                }
+              }
+            }}
+          />
+          <label
+            htmlFor="image-upload-input"
+            className="cursor-pointer rounded p-1.5 text-gf-text-primary hover:bg-gf-bg-soft dark:text-neutral-300 dark:hover:bg-neutral-700 inline-block"
+            title="Dodaj sliku"
+          >
+            <ImageIcon className="h-4 w-4" />
+          </label>
+        </div>
       </div>
 
       {/* Editor */}

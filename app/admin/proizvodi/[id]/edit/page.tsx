@@ -31,12 +31,8 @@ export default function EditProizvodPage() {
     "Barilla",
     "Dr. Schär",
     "No Gluten No Problem",
-    "Glutano",
-    "Doves Farm",
-    "Bob's Red Mill",
-    "King Arthur",
-    "Jovial",
-    "Tinkyada",
+    "Vitaminka",
+    "Alnavit",
     "Ostalo",
   ];
 
@@ -53,13 +49,14 @@ export default function EditProizvodPage() {
   ];
 
   const stores = [
-    "Gluten Free Shop",
+    "Garden",
     "Bio Planet",
     "Konzum",
     "Spar",
     "Lidl",
     "Kaufland",
     "Plodine",
+    "DM",
     "Online",
     "Ostalo",
   ];

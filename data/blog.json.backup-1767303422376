@@ -1,9 +1,9 @@
 [
   {
-    "id": "251221-dijagnoza",
+    "id": "1",
     "title": "Dijagnoza",
     "excerpt": "Moja agonija počela je 2015., dakle sada već prije 10 godina",
-    "image": "/images/blog/251221-dijagnoza-Gemini_Generated_Image_4dme6b4dme6b4dme.png",
+    "image": "/images/blog/1-Gemini_Generated_Image_4dme6b4dme6b4dme.png",
     "gallery": [],
     "author": "Ivica Drusany",
     "tags": [
@@ -16,10 +16,10 @@
     "createdAt": "2025-12-21"
   },
   {
-    "id": "260101-opreza-nikad-dosta-rtfm",
+    "id": "693a14f0-6b2a-400f-88eb-43ed79bb02f7",
     "title": "Opreza nikad dosta (RTFM)",
     "excerpt": "Kad misliš da si siguran, da si već savladao deklaraciju, da si već više puta pojeo tu stvar i da si siguran, kad misliš da je nešto bezglutensko, opet se možeš prevariti.",
-    "image": "/images/blog/260101-opreza-nikad-dosta-rtfm-357327d81e7592a6661fbca6215a61db162ccd438802a608d05fb668bf373162.jpeg",
+    "image": "/images/blog/693a14f0-6b2a-400f-88eb-43ed79bb02f7-357327d81e7592a6661fbca6215a61db162ccd438802a608d05fb668bf373162.jpeg",
     "gallery": [],
     "author": "Ivica Drusany",
     "tags": [
@@ -30,10 +30,10 @@
     "createdAt": "2026-01-01"
   },
   {
-    "id": "260101-prvi-koraci",
+    "id": "2d432677-231b-4fd0-95a4-f2f1d059f2dc",
     "title": "Prvi koraci",
     "excerpt": "Kad vas prođe početni šok i pomirite se s tim da imate doživotnu autoimunu bolest koja će vam znatno promijeniti život, vrijeme je da se počnete organizirati što prije.",
-    "image": "/images/blog/260101-prvi-koraci-Gemini_Generated_Image_u4ea2iu4ea2iu4ea.png",
+    "image": "/images/blog/2d432677-231b-4fd0-95a4-f2f1d059f2dc-Gemini_Generated_Image_u4ea2iu4ea2iu4ea.png",
     "gallery": [],
     "author": "Ivica Drusany",
     "tags": [
@@ -41,10 +41,7 @@
       "savjeti",
       "iskustva"
     ],
-    "category": [
-      "iskustva, savjeti, ",
-      "Iskustva"
-    ],
+    "category": "iskustva, savjeti, ",
     "readTime": 2,
     "createdAt": "2026-01-01"
   }

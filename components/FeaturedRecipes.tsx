@@ -70,77 +70,76 @@ export function FeaturedRecipes() {
               whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
               className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-gf-bg-card shadow-lg transition-all hover:border-gf-safe/50 hover:shadow-2xl dark:border-neutral-700 dark:bg-neutral-900"
             >
-              <div className="relative aspect-video w-full overflow-hidden">
-                <ImagePlaceholder
-                  imageUrl={recipe.image}
-                  alt={recipe.title}
-                  emoji={recipeEmojis[index]}
-                  gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
-                />
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                  className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"
-                />
-                <motion.div
-                  initial={{ x: "-100%" }}
-                  whileHover={{ x: "100%" }}
-                  transition={{ duration: 0.6 }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                />
-              </div>
-              <div className="p-6">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.2 + 0.3 }}
-                  className="mb-3 flex items-center gap-4 text-sm text-gf-text-muted dark:text-neutral-400"
-                >
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{recipe.prepTime + recipe.cookTime} min</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    <span>{recipe.servings} porcija</span>
-                  </div>
-                </motion.div>
-                <h3 className="mb-3 text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
-                  {recipe.title}
-                </h3>
-                <p className="mb-4 line-clamp-2 text-gf-text-secondary dark:text-neutral-400">
-                  {recipe.description}
-                </p>
-                <div className="mb-4 flex flex-wrap gap-2">
-                  {recipe.tags.slice(0, 3).map((tag, tagIndex) => (
-                    <motion.span
-                      key={tag}
-                      initial={{ opacity: 0, scale: 0 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.2 + tagIndex * 0.1 + 0.4 }}
-                      whileHover={{ scale: 1.1 }}
-                      className="cursor-default rounded-full bg-gf-safe/20 px-3 py-1 text-xs font-medium text-gf-safe transition-colors hover:bg-gf-safe/30 dark:bg-gf-safe/30 dark:text-gf-safe"
-                    >
-                      {tag}
-                    </motion.span>
-                  ))}
+              <Link href={`/recepti/${recipe.id}`}>
+                <div className="relative aspect-video w-full overflow-hidden">
+                  <ImagePlaceholder
+                    imageUrl={recipe.image}
+                    alt={recipe.title}
+                    emoji={recipeEmojis[index]}
+                    gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
+                  />
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"
+                  />
+                  <motion.div
+                    initial={{ x: "-100%" }}
+                    whileHover={{ x: "100%" }}
+                    transition={{ duration: 0.6 }}
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  />
                 </div>
-                <Link
-                  href={`/recepti/${recipe.id}`}
-                  className="group/link inline-flex items-center gap-2 text-sm font-medium text-gf-cta transition-all hover:text-gf-cta-hover dark:text-gf-cta dark:hover:text-gf-cta-hover"
-                >
-                  Vidi recept
-                  <motion.span
-                    className="inline-block"
-                    animate={{ x: [0, 4, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, delay: index * 0.2 }}
+                <div className="p-6">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.2 + 0.3 }}
+                    className="mb-3 flex items-center gap-4 text-sm text-gf-text-muted dark:text-neutral-400"
                   >
-                    →
-                  </motion.span>
-                </Link>
-              </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{recipe.prepTime + recipe.cookTime} min</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span>{recipe.servings} porcija</span>
+                    </div>
+                  </motion.div>
+                  <h3 className="mb-3 text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
+                    {recipe.title}
+                  </h3>
+                  <p className="mb-4 line-clamp-2 text-gf-text-secondary dark:text-neutral-400">
+                    {recipe.description}
+                  </p>
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    {recipe.tags.slice(0, 3).map((tag, tagIndex) => (
+                      <motion.span
+                        key={tag}
+                        initial={{ opacity: 0, scale: 0 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.2 + tagIndex * 0.1 + 0.4 }}
+                        whileHover={{ scale: 1.1 }}
+                        className="cursor-default rounded-full bg-gf-safe/20 px-3 py-1 text-xs font-medium text-gf-safe transition-colors hover:bg-gf-safe/30 dark:bg-gf-safe/30 dark:text-gf-safe"
+                      >
+                        {tag}
+                      </motion.span>
+                    ))}
+                  </div>
+                  <p className="inline-flex items-center gap-2 text-sm font-medium text-gf-cta transition-all group-hover:text-gf-cta-hover dark:text-gf-cta dark:group-hover:text-gf-cta-hover">
+                    Vidi recept
+                    <motion.span
+                      className="inline-block"
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity, delay: index * 0.2 }}
+                    >
+                      →
+                    </motion.span>
+                  </p>
+                </div>
+              </Link>
             </motion.article>
           ))}
         </div>

@@ -86,53 +86,52 @@ export function LatestPosts() {
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.15, type: "spring", stiffness: 100 }}
-              whileHover={{ y: -8, transition: { duration: 0.2 } }}
+              whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
               className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-gf-bg-card shadow-lg transition-all hover:border-gf-cta/30 hover:shadow-2xl dark:border-neutral-800 dark:bg-neutral-800"
             >
-              <div className="relative aspect-video w-full overflow-hidden">
-                <ImagePlaceholder
-                  imageUrl={post.image}
-                  alt={post.title}
-                  emoji={blogEmojis[index % blogEmojis.length]}
-                  gradient="from-gf-safe/40 via-gf-cta/30 to-gf-safe/40"
-                />
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                  className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"
-                />
-              </div>
-              <div className="p-6">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.2 + 0.3 }}
-                  className="mb-3 flex items-center gap-2 text-sm text-gf-text-muted dark:text-neutral-400"
-                >
-                  <Clock className="h-4 w-4" />
-                  <span>{post.readTime} min čitanja</span>
-                </motion.div>
-                <h3 className="mb-3 text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
-                  {post.title}
-                </h3>
-                <p className="mb-4 line-clamp-2 text-gf-text-secondary dark:text-neutral-400">
-                  {post.excerpt}
-                </p>
-                <Link
-                  href={`/blog/${post.id}`}
-                  className="group/link inline-flex items-center gap-2 text-sm font-medium text-gf-cta transition-all hover:text-gf-cta-hover dark:text-gf-cta dark:hover:text-gf-cta-hover"
-                >
-                  Pročitaj više
-                  <motion.span
-                    className="inline-block"
-                    animate={{ x: [0, 4, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, delay: index * 0.2 }}
+              <Link href={`/blog/${post.id}`}>
+                <div className="relative aspect-video w-full overflow-hidden">
+                  <ImagePlaceholder
+                    imageUrl={post.image}
+                    alt={post.title}
+                    emoji={blogEmojis[index % blogEmojis.length]}
+                    gradient="from-gf-safe/40 via-gf-cta/30 to-gf-safe/40"
+                  />
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"
+                  />
+                </div>
+                <div className="p-6">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.2 + 0.3 }}
+                    className="mb-3 flex items-center gap-2 text-sm text-gf-text-muted dark:text-neutral-400"
                   >
-                    →
-                  </motion.span>
-                </Link>
-              </div>
+                    <Clock className="h-4 w-4" />
+                    <span>{post.readTime} min čitanja</span>
+                  </motion.div>
+                  <h3 className="mb-3 text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
+                    {post.title}
+                  </h3>
+                  <p className="mb-4 line-clamp-2 text-gf-text-secondary dark:text-neutral-400">
+                    {post.excerpt}
+                  </p>
+                  <p className="inline-flex items-center gap-2 text-sm font-medium text-gf-cta transition-all group-hover:text-gf-cta-hover dark:text-gf-cta dark:group-hover:text-gf-cta-hover">
+                    Pročitaj više
+                    <motion.span
+                      className="inline-block"
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity, delay: index * 0.2 }}
+                    >
+                      →
+                    </motion.span>
+                  </p>
+                </div>
+              </Link>
             </motion.article>
           ))}
         </div>
