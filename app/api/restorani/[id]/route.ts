@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir, readFile } from "fs/promises";
+import { readFile, writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
-import { randomUUID } from "crypto";
 import { Restaurant } from "@/types";
 import { mockRestaurants } from "@/data/mockData";
 
@@ -22,6 +21,11 @@ async function readRestaurantsFile(): Promise<Restaurant[]> {
   }
 }
 
+async function writeRestaurantsFile(restaurants: Restaurant[]): Promise<void> {
+  await mkdir(path.dirname(restaurantsFilePath), { recursive: true });
+  await writeFile(restaurantsFilePath, JSON.stringify(restaurants, null, 2), "utf8");
+}
+
 async function readDeletedRestaurantsFile(): Promise<string[]> {
   try {
     if (existsSync(deletedRestaurantsFilePath)) {
@@ -35,17 +39,12 @@ async function readDeletedRestaurantsFile(): Promise<string[]> {
   }
 }
 
-async function writeRestaurantsFile(restaurants: Restaurant[]): Promise<void> {
-  await mkdir(path.dirname(restaurantsFilePath), { recursive: true });
-  await writeFile(restaurantsFilePath, JSON.stringify(restaurants, null, 2), "utf8");
-}
-
 async function writeDeletedRestaurantsFile(deletedIds: string[]): Promise<void> {
   await mkdir(path.dirname(deletedRestaurantsFilePath), { recursive: true });
   await writeFile(deletedRestaurantsFilePath, JSON.stringify(deletedIds, null, 2), "utf8");
 }
 
-export async function GET() {
+async function getAllRestaurants(): Promise<Restaurant[]> {
   const dynamicRestaurants = await readRestaurantsFile();
   const deletedIds = await readDeletedRestaurantsFile();
   
@@ -62,45 +61,46 @@ export async function GET() {
     (restaurant) => !deletedIds.includes(restaurant.id)
   );
   
-  return NextResponse.json([...filteredMockRestaurants, ...filteredDynamicRestaurants]);
+  return [...filteredMockRestaurants, ...filteredDynamicRestaurants];
 }
 
-export async function POST(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const allRestaurants = await getAllRestaurants();
+  const restaurant = allRestaurants.find((r) => r.id === id);
+
+  if (!restaurant) {
+    return NextResponse.json({ message: "Restaurant not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(restaurant);
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const formData = await request.formData();
-    const imageFile = formData.get("image") as File | null;
+    const { id } = await params;
+    const dynamicRestaurants = await readRestaurantsFile();
+    const filteredRestaurants = dynamicRestaurants.filter((r) => r.id !== id);
+    await writeRestaurantsFile(filteredRestaurants);
 
-    const cuisineValue = formData.get("cuisine") as string;
-    const newRestaurant: Restaurant = {
-      id: randomUUID(),
-      name: formData.get("name") as string,
-      description: formData.get("description") as string || "",
-      address: formData.get("address") as string,
-      phone: formData.get("phone") as string || undefined,
-      website: formData.get("website") as string || undefined,
-      cuisine: cuisineValue ? [cuisineValue] : [],
-      image: undefined,
-    };
-
-    // Upload slike
-    if (imageFile && imageFile.size > 0) {
-      const uploadDir = path.join(process.cwd(), "public", "images", "restaurants");
-      await mkdir(uploadDir, { recursive: true });
-      const filename = `${newRestaurant.id}-${imageFile.name}`;
-      const filePath = path.join(uploadDir, filename);
-      await writeFile(filePath, Buffer.from(await imageFile.arrayBuffer()));
-      newRestaurant.image = `/images/restaurants/${filename}`;
+    // Dodaj ID u listu obrisanih restorana (kako se ne bi prikazivao ni mock verzija)
+    const deletedIds = await readDeletedRestaurantsFile();
+    if (!deletedIds.includes(id)) {
+      deletedIds.push(id);
+      await writeDeletedRestaurantsFile(deletedIds);
     }
 
-    const currentRestaurants = await readRestaurantsFile();
-    currentRestaurants.push(newRestaurant);
-    await writeRestaurantsFile(currentRestaurants);
-
-    return NextResponse.json({ message: "Restaurant added successfully", restaurant: newRestaurant }, { status: 201 });
+    return NextResponse.json({ message: "Restaurant deleted successfully" });
   } catch (error) {
-    console.error("Error adding restaurant:", error);
+    console.error("Error deleting restaurant:", error);
     return NextResponse.json(
-      { message: "Error adding restaurant", error: (error as Error).message },
+      { message: "Error deleting restaurant", error: (error as Error).message },
       { status: 500 }
     );
   }

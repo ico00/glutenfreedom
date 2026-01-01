@@ -7,8 +7,23 @@ export interface Recipe {
   cookTime: number;
   servings: number;
   difficulty: "lako" | "srednje" | "teško";
-  ingredients: string[];
-  instructions: string[];
+  ingredients: string[]; // Učitava se iz Markdown fajla
+  instructions: string[]; // Učitava se iz Markdown fajla
+  tags: string[];
+  category: string;
+  createdAt: string;
+}
+
+// Metadata bez ingredients i instructions (sprema se u JSON)
+export interface RecipeMetadata {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  prepTime: number;
+  cookTime: number;
+  servings: number;
+  difficulty: "lako" | "srednje" | "teško";
   tags: string[];
   category: string;
   createdAt: string;
@@ -50,11 +65,11 @@ export interface Restaurant {
   phone?: string;
   website?: string;
   cuisine: string[];
-  priceRange: "€" | "€€" | "€€€";
-  rating?: number;
+  priceRange?: "€" | "€€" | "€€€"; // Opcionalno - uklonjeno iz forme
+  rating?: number; // Opcionalno - uklonjeno iz forme
   image?: string;
-  glutenFreeOptions: "djelomično" | "potpuno";
-  location: {
+  glutenFreeOptions?: "djelomično" | "potpuno"; // Opcionalno - uklonjeno iz forme
+  location?: {
     lat: number;
     lng: number;
   };

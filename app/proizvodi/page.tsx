@@ -93,25 +93,31 @@ export default function ProizvodiPage() {
             {filteredProducts.map((product, index) => (
               <motion.article
                 key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="overflow-hidden rounded-lg border border-neutral-200 bg-gf-bg-card shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-800"
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+                whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
+                className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-gf-bg-card shadow-lg transition-all hover:border-gf-cta/30 hover:shadow-2xl dark:border-neutral-800 dark:bg-neutral-800"
               >
                 {product.image && (
-                  <div className="relative h-48 w-full overflow-hidden">
+                  <div className="relative aspect-video w-full overflow-hidden">
                     <ImagePlaceholder
                       imageUrl={product.image}
                       alt={product.name}
                       emoji="🛒"
                       gradient="from-gf-safe/40 via-gf-cta/30 to-gf-safe/40"
                     />
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1 }}
+                      className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"
+                    />
                   </div>
                 )}
                 <div className="p-6">
                   <div className="mb-4 flex items-start justify-between">
                     <div>
-                      <h3 className="text-xl font-semibold text-gf-text-primary dark:text-neutral-100">
+                      <h3 className="text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
                         {product.name}
                       </h3>
                       <p className="mt-1 text-sm text-gf-text-muted dark:text-neutral-400">
@@ -122,22 +128,32 @@ export default function ProizvodiPage() {
                       <CheckCircle className="h-5 w-5 text-gf-safe dark:text-gf-safe" />
                     )}
                   </div>
-                  <p className="mb-4 text-gf-text-secondary dark:text-neutral-400">
+                  <p className="mb-4 line-clamp-2 text-gf-text-secondary dark:text-neutral-400">
                     {product.description}
                   </p>
                   <div className="mb-4 flex flex-wrap gap-2">
-                    {product.tags.filter(tag => tag.trim()).map((tag) => (
-                      <span
+                    {product.tags.filter(tag => tag.trim()).map((tag, tagIndex) => (
+                      <motion.span
                         key={tag}
-                        className="rounded-full bg-gf-safe/20 px-3 py-1 text-xs font-medium text-gf-safe dark:bg-gf-safe/30 dark:text-gf-safe"
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.1 + tagIndex * 0.1 + 0.3 }}
+                        whileHover={{ scale: 1.1 }}
+                        className="cursor-default rounded-full bg-gf-safe/20 px-3 py-1 text-xs font-medium text-gf-safe transition-colors hover:bg-gf-safe/30 dark:bg-gf-safe/30 dark:text-gf-safe"
                       >
                         {tag}
-                      </span>
+                      </motion.span>
                     ))}
                   </div>
                   {product.store && (
                     <p className="text-sm text-gf-text-muted dark:text-neutral-400">
                       Dostupno u: {product.store}
+                    </p>
+                  )}
+                  {product.price && (
+                    <p className="mt-4 text-lg font-semibold text-gf-cta dark:text-gf-cta">
+                      {product.price} €
+                      {product.weight && ` / ${product.weight}g`}
                     </p>
                   )}
                 </div>
@@ -161,30 +177,57 @@ export default function ProizvodiPage() {
             {mockStores.map((store, index) => (
               <motion.article
                 key={store.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="overflow-hidden rounded-lg border border-neutral-200 bg-gf-bg-card p-6 shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-800"
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+                whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
+                className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-gf-bg-card shadow-lg transition-all hover:border-gf-cta/30 hover:shadow-2xl dark:border-neutral-800 dark:bg-neutral-800"
               >
-                <h3 className="mb-2 text-xl font-semibold text-gf-text-primary dark:text-neutral-100">
-                  {store.name}
-                </h3>
-                <p className="mb-4 text-gf-text-secondary dark:text-neutral-400">
-                  {store.description}
-                </p>
-                <p className="mb-2 text-sm text-gf-text-muted dark:text-neutral-400">
-                  {store.address}
-                </p>
-                {store.website && (
-                  <a
-                    href={store.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-gf-cta hover:text-gf-cta-hover dark:text-gf-cta dark:hover:text-gf-cta-hover"
-                  >
-                    Posjeti web stranicu →
-                  </a>
+                {store.image && (
+                  <div className="relative aspect-video w-full overflow-hidden">
+                    <ImagePlaceholder
+                      imageUrl={store.image}
+                      alt={store.name}
+                      emoji="🏪"
+                      gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
+                    />
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1 }}
+                      className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"
+                    />
+                  </div>
                 )}
+                <div className="p-6">
+                  <h3 className="mb-2 text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
+                    {store.name}
+                  </h3>
+                  <p className="mb-4 line-clamp-2 text-gf-text-secondary dark:text-neutral-400">
+                    {store.description}
+                  </p>
+                  <div className="mb-4 flex items-center gap-2 text-sm text-gf-text-muted dark:text-neutral-400">
+                    <span>{store.address}</span>
+                  </div>
+                  {store.website && (
+                    <p className="inline-flex items-center gap-2 text-sm font-medium text-gf-cta transition-all group-hover:text-gf-cta-hover dark:text-gf-cta dark:group-hover:text-gf-cta-hover">
+                      <a
+                        href={store.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2"
+                      >
+                        Posjeti web stranicu
+                        <motion.span
+                          className="inline-block"
+                          animate={{ x: [0, 4, 0] }}
+                          transition={{ duration: 1.5, repeat: Infinity, delay: index * 0.2 }}
+                        >
+                          →
+                        </motion.span>
+                      </a>
+                    </p>
+                  )}
+                </div>
               </motion.article>
             ))}
           </div>

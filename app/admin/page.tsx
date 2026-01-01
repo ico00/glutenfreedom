@@ -14,22 +14,35 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
-import { BlogPost, Product } from "@/types";
+import { BlogPost, Product, Restaurant, Recipe } from "@/types";
+import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"recipes" | "blog" | "restaurants" | "products">("recipes");
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Učitaj podatke kada se tab promijeni
   useEffect(() => {
-    if (activeTab === "blog") {
+    if (activeTab === "recipes") {
+      loadRecipes();
+    } else if (activeTab === "blog") {
       loadBlogPosts();
     } else if (activeTab === "products") {
       loadProducts();
+    } else if (activeTab === "restaurants") {
+      loadRestaurants();
     }
   }, [activeTab]);
+
+  // Učitaj recepte pri prvom učitavanju (recipes je default tab)
+  useEffect(() => {
+    loadRecipes();
+  }, []);
 
   async function loadBlogPosts() {
     setIsLoading(true);
@@ -58,6 +71,49 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Error loading products:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function loadRestaurants() {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/restorani", {
+        cache: 'no-store',
+      });
+      if (response.ok) {
+        const restaurantsData = await response.json();
+        setRestaurants(restaurantsData);
+      }
+    } catch (error) {
+      console.error("Error loading restaurants:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function loadRecipes() {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/recepti", {
+        cache: 'no-store',
+      });
+      if (response.ok) {
+        const recipesData = await response.json();
+        if (Array.isArray(recipesData)) {
+          setRecipes(recipesData);
+        } else {
+          console.error("API did not return an array:", recipesData);
+          setRecipes([]);
+        }
+      } else {
+        console.error("Failed to load recipes:", response.status, response.statusText);
+        setRecipes([]);
+      }
+    } catch (error) {
+      console.error("Error loading recipes:", error);
+      setRecipes([]);
     } finally {
       setIsLoading(false);
     }
@@ -104,6 +160,52 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Error deleting product:", error);
       alert("Greška pri brisanju proizvoda");
+    }
+  }
+
+  async function handleDeleteRestaurant(id: string) {
+    if (!confirm("Jesi li siguran da želiš obrisati ovaj restoran?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/restorani/${id}`, {
+        method: "DELETE",
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        await loadRestaurants();
+        router.refresh();
+      } else {
+        alert("Greška pri brisanju restorana");
+      }
+    } catch (error) {
+      console.error("Error deleting restaurant:", error);
+      alert("Greška pri brisanju restorana");
+    }
+  }
+
+  async function handleDeleteRecipe(id: string) {
+    if (!confirm("Jesi li siguran da želiš obrisati ovaj recept?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/recepti/${id}`, {
+        method: "DELETE",
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        await loadRecipes();
+        router.refresh();
+      } else {
+        alert("Greška pri brisanju recepta");
+      }
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      alert("Greška pri brisanju recepta");
     }
   }
 
@@ -170,9 +272,69 @@ export default function AdminPage() {
                   Dodaj novi recept
                 </Link>
               </div>
-              <p className="text-gf-text-secondary dark:text-neutral-400">
-                Upravljaj receptima. Klikni na "Dodaj novi recept" da kreneš.
-              </p>
+
+              {isLoading ? (
+                <p className="text-gf-text-secondary dark:text-neutral-400">Učitavanje...</p>
+              ) : recipes.length === 0 ? (
+                <p className="text-gf-text-secondary dark:text-neutral-400">
+                  Nema recepata. Klikni na "Dodaj novi recept" da kreneš.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {recipes.map((recipe) => (
+                    <div
+                      key={recipe.id}
+                      className="flex items-center gap-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"
+                    >
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+                        <ImagePlaceholder
+                          imageUrl={recipe.image}
+                          alt={recipe.title}
+                          emoji="🍞"
+                          gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gf-text-primary dark:text-neutral-100">
+                          {recipe.title}
+                        </h3>
+                        <p className="mt-1 text-sm text-gf-text-secondary dark:text-neutral-400">
+                          {recipe.description || "Bez opisa"}
+                        </p>
+                        <div className="mt-2 flex gap-2 text-xs text-gf-text-muted dark:text-neutral-500">
+                          <span>Kategorija: {recipe.category}</span>
+                          <span>•</span>
+                          <span>Težina: {recipe.difficulty}</span>
+                          <span>•</span>
+                          <span>{recipe.prepTime + recipe.cookTime} min</span>
+                          <span>•</span>
+                          <span>{recipe.servings} porcija</span>
+                          {recipe.createdAt && (
+                            <>
+                              <span>•</span>
+                              <span>{new Date(recipe.createdAt).toLocaleDateString("hr-HR")}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/admin/recepti/${recipe.id}/edit`}
+                          className="rounded-lg bg-gf-cta/10 p-2 text-gf-cta transition-colors hover:bg-gf-cta/20 dark:bg-gf-cta/20 dark:hover:bg-gf-cta/30"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteRecipe(recipe.id)}
+                          className="rounded-lg bg-gf-risk/10 p-2 text-gf-risk transition-colors hover:bg-gf-risk/20 dark:bg-gf-risk/20 dark:hover:bg-gf-risk/30"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -202,8 +364,16 @@ export default function AdminPage() {
                   {blogPosts.map((post) => (
                     <div
                       key={post.id}
-                      className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"
+                      className="flex items-center gap-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"
                     >
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+                        <ImagePlaceholder
+                          imageUrl={post.image}
+                          alt={post.title}
+                          emoji="📚"
+                          gradient="from-gf-safe/40 via-gf-cta/30 to-gf-safe/40"
+                        />
+                      </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-gf-text-primary dark:text-neutral-100">
                           {post.title}
@@ -254,9 +424,61 @@ export default function AdminPage() {
                   Dodaj novi restoran
                 </Link>
               </div>
-              <p className="text-gf-text-secondary dark:text-neutral-400">
-                Upravljaj restoranima. Klikni na "Dodaj novi restoran" da kreneš.
-              </p>
+
+              {isLoading ? (
+                <p className="text-gf-text-secondary dark:text-neutral-400">Učitavanje...</p>
+              ) : restaurants.length === 0 ? (
+                <p className="text-gf-text-secondary dark:text-neutral-400">
+                  Nema restorana. Klikni na "Dodaj novi restoran" da kreneš.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {restaurants.map((restaurant) => (
+                    <div
+                      key={restaurant.id}
+                      className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gf-text-primary dark:text-neutral-100">
+                          {restaurant.name}
+                        </h3>
+                        <p className="mt-1 text-sm text-gf-text-secondary dark:text-neutral-400">
+                          {restaurant.description || "Bez opisa"}
+                        </p>
+                        <div className="mt-2 flex gap-2 text-xs text-gf-text-muted dark:text-neutral-500">
+                          <span>Adresa: {restaurant.address}</span>
+                          {restaurant.cuisine && restaurant.cuisine.length > 0 && (
+                            <>
+                              <span>•</span>
+                              <span>Kuhinja: {restaurant.cuisine.join(", ")}</span>
+                            </>
+                          )}
+                          {restaurant.phone && (
+                            <>
+                              <span>•</span>
+                              <span>Tel: {restaurant.phone}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/admin/restorani/${restaurant.id}/edit`}
+                          className="rounded-lg bg-gf-cta/10 p-2 text-gf-cta transition-colors hover:bg-gf-cta/20 dark:bg-gf-cta/20 dark:hover:bg-gf-cta/30"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteRestaurant(restaurant.id)}
+                          className="rounded-lg bg-gf-risk/10 p-2 text-gf-risk transition-colors hover:bg-gf-risk/20 dark:bg-gf-risk/20 dark:hover:bg-gf-risk/30"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -286,8 +508,16 @@ export default function AdminPage() {
                   {products.map((product) => (
                     <div
                       key={product.id}
-                      className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"
+                      className="flex items-center gap-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"
                     >
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+                        <ImagePlaceholder
+                          imageUrl={product.image}
+                          alt={product.name}
+                          emoji="🛒"
+                          gradient="from-gf-safe/40 via-gf-cta/30 to-gf-safe/40"
+                        />
+                      </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-gf-text-primary dark:text-neutral-100">
                           {product.name}

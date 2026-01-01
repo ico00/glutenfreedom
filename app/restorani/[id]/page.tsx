@@ -1,14 +1,66 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { mockRestaurants } from "@/data/mockData";
-import { MapPin, Phone, Globe, Star, ArrowLeft } from "lucide-react";
+import { MapPin, Phone, Globe, ArrowLeft } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import { Restaurant } from "@/types";
+import { readFile } from "fs/promises";
+import { existsSync } from "fs";
+import path from "path";
+import { mockRestaurants } from "@/data/mockData";
 
-export async function generateStaticParams() {
-  return mockRestaurants.map((restaurant) => ({
-    id: restaurant.id,
-  }));
+const restaurantsFilePath = path.join(process.cwd(), "data", "restaurants.json");
+const deletedRestaurantsFilePath = path.join(process.cwd(), "data", "deletedRestaurants.json");
+
+async function readRestaurantsFile(): Promise<Restaurant[]> {
+  try {
+    if (existsSync(restaurantsFilePath)) {
+      const fileContents = await readFile(restaurantsFilePath, "utf-8");
+      return JSON.parse(fileContents);
+    }
+    return [];
+  } catch (error) {
+    console.error("Error reading restaurants file:", error);
+    return [];
+  }
+}
+
+async function readDeletedRestaurantsFile(): Promise<string[]> {
+  try {
+    if (existsSync(deletedRestaurantsFilePath)) {
+      const fileContents = await readFile(deletedRestaurantsFilePath, "utf-8");
+      return JSON.parse(fileContents);
+    }
+    return [];
+  } catch (error) {
+    console.error("Error reading deleted restaurants file:", error);
+    return [];
+  }
+}
+
+async function getAllRestaurants(): Promise<Restaurant[]> {
+  const dynamicRestaurants = await readRestaurantsFile();
+  const deletedIds = await readDeletedRestaurantsFile();
+  
+  // Filtriraj mock restorane - ako postoji dinamički restoran s istim ID-om, koristi dinamički
+  // Također filtriraj obrisane restorane
+  const filteredMockRestaurants = mockRestaurants.filter(
+    (mockRestaurant) => 
+      !dynamicRestaurants.some((dynamicRestaurant) => dynamicRestaurant.id === mockRestaurant.id) &&
+      !deletedIds.includes(mockRestaurant.id)
+  );
+  
+  // Filtriraj dinamičke restorane - samo oni koji nisu obrisani
+  const filteredDynamicRestaurants = dynamicRestaurants.filter(
+    (restaurant) => !deletedIds.includes(restaurant.id)
+  );
+  
+  return [...filteredMockRestaurants, ...filteredDynamicRestaurants];
+}
+
+async function getRestaurant(id: string): Promise<Restaurant | null> {
+  const allRestaurants = await getAllRestaurants();
+  return allRestaurants.find((r) => r.id === id) || null;
 }
 
 export async function generateMetadata({
@@ -17,7 +69,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const restaurant = mockRestaurants.find((r) => r.id === id);
+  const restaurant = await getRestaurant(id);
   if (!restaurant) {
     return {
       title: "Restoran nije pronađen",
@@ -35,7 +87,7 @@ export default async function RestaurantDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const restaurant = mockRestaurants.find((r) => r.id === id);
+  const restaurant = await getRestaurant(id);
 
   if (!restaurant) {
     notFound();
@@ -55,6 +107,8 @@ export default async function RestaurantDetailPage({
         <article>
           <div className="mb-8 aspect-video w-full overflow-hidden rounded-2xl">
             <ImagePlaceholder
+              imageUrl={restaurant.image}
+              alt={restaurant.name}
               emoji="🍽️"
               gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
             />
@@ -65,31 +119,6 @@ export default async function RestaurantDetailPage({
               <h1 className="mb-2 text-4xl font-bold text-gf-text-primary dark:text-neutral-100">
                 {restaurant.name}
               </h1>
-              <div className="flex items-center gap-2">
-                <span className={`rounded-full px-3 py-1 text-sm font-medium ${
-                  restaurant.glutenFreeOptions === "potpuno"
-                    ? "bg-gf-safe/20 text-gf-safe dark:bg-gf-safe/30 dark:text-gf-safe"
-                    : "bg-gf-caution/20 text-gf-caution dark:bg-gf-caution/30 dark:text-gf-caution"
-                }`}>
-                  {restaurant.glutenFreeOptions === "potpuno"
-                    ? "Potpuno bezglutenski"
-                    : "Djelomično bezglutenski"}
-                </span>
-                {restaurant.rating && (
-                  <div className="flex items-center gap-1 text-lg text-gf-text-primary dark:text-neutral-300">
-                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                    <span className="font-semibold">{restaurant.rating}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-semibold text-gf-text-primary dark:text-neutral-100">
-                {restaurant.priceRange}
-              </p>
-              <p className="text-sm text-gf-text-secondary dark:text-neutral-400">
-                Cjenovni rang
-              </p>
             </div>
           </div>
 

@@ -16,7 +16,9 @@ export function LatestPosts() {
   useEffect(() => {
     async function loadPosts() {
       try {
-        const response = await fetch("/api/blog");
+        const response = await fetch("/api/blog", {
+          cache: 'no-store',
+        });
         if (response.ok) {
           const allPosts = await response.json();
           // Sortiraj po datumu (najnoviji prvi) i uzmi prva 3

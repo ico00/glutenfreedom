@@ -16,11 +16,6 @@ export default function NoviRestoranPage() {
     phone: "",
     website: "",
     cuisine: "",
-    priceRange: "€" as "€" | "€€" | "€€€",
-    rating: "",
-    glutenFreeOptions: "djelomično" as "djelomično" | "potpuno",
-    lat: "",
-    lng: "",
     image: null as File | null,
   });
 
@@ -47,12 +42,7 @@ export default function NoviRestoranPage() {
       submitData.append("address", formData.address);
       submitData.append("phone", formData.phone);
       submitData.append("website", formData.website);
-      submitData.append("cuisine", JSON.stringify(formData.cuisine.split(",").map((c) => c.trim())));
-      submitData.append("priceRange", formData.priceRange);
-      submitData.append("rating", formData.rating || "");
-      submitData.append("glutenFreeOptions", formData.glutenFreeOptions);
-      submitData.append("lat", formData.lat);
-      submitData.append("lng", formData.lng);
+      submitData.append("cuisine", formData.cuisine || "");
 
       if (formData.image) {
         submitData.append("image", formData.image);
@@ -112,11 +102,10 @@ export default function NoviRestoranPage() {
           {/* Opis */}
           <div>
             <label htmlFor="description" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Opis *
+              Opis
             </label>
             <textarea
               id="description"
-              required
               rows={4}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -170,103 +159,32 @@ export default function NoviRestoranPage() {
           {/* Kuhinja */}
           <div>
             <label htmlFor="cuisine" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Kuhinja (odvojeno zarezom) *
+              Kuhinja
             </label>
-            <input
-              type="text"
+            <select
               id="cuisine"
-              required
               value={formData.cuisine}
               onChange={(e) => setFormData({ ...formData, cuisine: e.target.value })}
               className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              placeholder="npr. mediteranska, vegetarijanska"
-            />
-          </div>
-
-          {/* Cjenovni rang */}
-          <div>
-            <label htmlFor="priceRange" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Cjenovni rang *
-            </label>
-            <select
-              id="priceRange"
-              required
-              value={formData.priceRange}
-              onChange={(e) => setFormData({ ...formData, priceRange: e.target.value as "€" | "€€" | "€€€" })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
             >
-              <option value="€">€ - Jeftino</option>
-              <option value="€€">€€ - Srednje</option>
-              <option value="€€€">€€€ - Skupo</option>
+              <option value="">Odaberi kuhinju</option>
+              <option value="mediteranska">Mediteranska</option>
+              <option value="vegetarijanska">Vegetarijanska</option>
+              <option value="organička">Organička</option>
+              <option value="zdrava">Zdrava</option>
+              <option value="tradicionalna">Tradicionalna</option>
+              <option value="obiteljska">Obiteljska</option>
+              <option value="talijanska">Talijanska</option>
+              <option value="azijska">Azijska</option>
+              <option value="meksička">Meksička</option>
+              <option value="američka">Američka</option>
+              <option value="francuska">Francuska</option>
+              <option value="hrvatska">Hrvatska</option>
+              <option value="balkanska">Balkanska</option>
+              <option value="vegan">Vegan</option>
+              <option value="riblja">Riblja</option>
+              <option value="mesna">Mesna</option>
             </select>
-          </div>
-
-          {/* Ocjena */}
-          <div>
-            <label htmlFor="rating" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Ocjena (0-5)
-            </label>
-            <input
-              type="number"
-              id="rating"
-              min="0"
-              max="5"
-              step="0.1"
-              value={formData.rating}
-              onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            />
-          </div>
-
-          {/* Bezglutenske opcije */}
-          <div>
-            <label htmlFor="glutenFreeOptions" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Bezglutenske opcije *
-            </label>
-            <select
-              id="glutenFreeOptions"
-              required
-              value={formData.glutenFreeOptions}
-              onChange={(e) => setFormData({ ...formData, glutenFreeOptions: e.target.value as "djelomično" | "potpuno" })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            >
-              <option value="djelomično">Djelomično</option>
-              <option value="potpuno">Potpuno</option>
-            </select>
-          </div>
-
-          {/* Koordinate */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="lat" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-                Širina (lat) *
-              </label>
-              <input
-                type="number"
-                id="lat"
-                required
-                step="any"
-                value={formData.lat}
-                onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
-                className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                placeholder="45.8150"
-              />
-            </div>
-            <div>
-              <label htmlFor="lng" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-                Dužina (lng) *
-              </label>
-              <input
-                type="number"
-                id="lng"
-                required
-                step="any"
-                value={formData.lng}
-                onChange={(e) => setFormData({ ...formData, lng: e.target.value })}
-                className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                placeholder="15.9819"
-              />
-            </div>
           </div>
 
           {/* Slika */}

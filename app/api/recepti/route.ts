@@ -1,28 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir, readFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
-
-// Učitaj postojeće recepte
-async function getRecipes() {
-  try {
-    const filePath = path.join(process.cwd(), "data", "recipes.json");
-    if (existsSync(filePath)) {
-      const fileContents = await readFile(filePath, "utf-8");
-      return JSON.parse(fileContents);
-    }
-    return [];
-  } catch {
-    return [];
-  }
-}
-
-// Spremi recepte
-async function saveRecipes(recipes: any[]) {
-  const filePath = path.join(process.cwd(), "data", "recipes.json");
-  await writeFile(filePath, JSON.stringify(recipes, null, 2), "utf-8");
-}
+import { RecipeMetadata } from "@/types";
+import {
+  readRecipeMetadata,
+  writeRecipeMetadata,
+  writeRecipeContent,
+  getAllRecipes,
+} from "@/lib/recipeUtils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -85,9 +72,11 @@ export async function POST(request: NextRequest) {
       imagePath = `/images/recipes/${fileName}`;
     }
 
-    // Kreiraj novi recept
-    const newRecipe = {
-      id: randomUUID(),
+    const recipeId = randomUUID();
+
+    // Kreiraj metadata (bez ingredients i instructions)
+    const metadata: RecipeMetadata = {
+      id: recipeId,
       title,
       description,
       image: imagePath,
@@ -95,21 +84,29 @@ export async function POST(request: NextRequest) {
       cookTime,
       servings,
       difficulty,
-      ingredients,
-      instructions,
       tags,
       category,
       createdAt: new Date().toISOString().split("T")[0],
     };
 
-    // Učitaj postojeće recepte
-    const existingRecipes = await getRecipes();
-    
-    // Dodaj novi recept
-    const updatedRecipes = [...existingRecipes, newRecipe];
+    // Spremi Markdown sadržaj (ingredients i instructions)
+    await writeRecipeContent(recipeId, ingredients, instructions);
 
-    // Spremi
-    await saveRecipes(updatedRecipes);
+    // Učitaj postojeće metadata
+    const existingMetadata = await readRecipeMetadata();
+    
+    // Dodaj novi metadata
+    existingMetadata.push(metadata);
+
+    // Spremi metadata
+    await writeRecipeMetadata(existingMetadata);
+
+    // Vrati potpuni recept za response
+    const newRecipe = {
+      ...metadata,
+      ingredients,
+      instructions,
+    };
 
     return NextResponse.json({ success: true, recipe: newRecipe }, { status: 201 });
   } catch (error: any) {
@@ -123,7 +120,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const recipes = await getRecipes();
+    const recipes = await getAllRecipes();
     return NextResponse.json(recipes);
   } catch (error: any) {
     return NextResponse.json(

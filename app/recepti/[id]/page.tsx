@@ -1,25 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { mockRecipes } from "@/data/mockData";
 import { Clock, Users, ArrowLeft } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
-import { readFile } from "fs/promises";
-import path from "path";
 import type { Recipe } from "@/types";
-
-// Učitaj dinamičke recepte
-async function getAllRecipes(): Promise<Recipe[]> {
-  try {
-    const recipesPath = path.join(process.cwd(), "data", "recipes.json");
-    const recipesData = await readFile(recipesPath, "utf-8");
-    const dynamicRecipes = JSON.parse(recipesData);
-    return [...mockRecipes, ...dynamicRecipes];
-  } catch {
-    // Ako ne uspije, koristi samo mock podatke
-    return mockRecipes;
-  }
-}
+import { getAllRecipes } from "@/lib/recipeUtils";
 
 export async function generateStaticParams() {
   const allRecipes = await getAllRecipes();
@@ -108,7 +93,7 @@ export default async function RecipeDetailPage({
           </p>
 
           <div className="mb-8 flex flex-wrap gap-2">
-            {recipe.tags.map((tag) => (
+            {recipe.tags && recipe.tags.map((tag) => (
               <span
                 key={tag}
                 className="rounded-full bg-gf-safe/20 px-3 py-1 text-sm font-medium text-gf-safe dark:bg-gf-safe/30 dark:text-gf-safe"
@@ -124,15 +109,19 @@ export default async function RecipeDetailPage({
                 Sastojci
               </h2>
               <ul className="space-y-2">
-                {recipe.ingredients.map((ingredient, index) => (
-                  <li
-                    key={index}
-                    className="flex items-start gap-2 text-gf-text-primary dark:text-neutral-300"
-                  >
-                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gf-cta dark:bg-gf-cta" />
-                    <span>{ingredient}</span>
-                  </li>
-                ))}
+                {recipe.ingredients && recipe.ingredients.length > 0 ? (
+                  recipe.ingredients.map((ingredient, index) => (
+                    <li
+                      key={index}
+                      className="flex items-start gap-2 text-gf-text-primary dark:text-neutral-300"
+                    >
+                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gf-cta dark:bg-gf-cta" />
+                      <span>{ingredient}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gf-text-secondary dark:text-neutral-400">Nema sastojaka</li>
+                )}
               </ul>
             </div>
 
@@ -141,17 +130,21 @@ export default async function RecipeDetailPage({
                 Priprema
               </h2>
               <ol className="space-y-4">
-                {recipe.instructions.map((instruction, index) => (
-                  <li
-                    key={index}
-                    className="flex gap-4 text-gf-text-primary dark:text-neutral-300"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gf-cta text-sm font-semibold text-white dark:bg-gf-cta">
-                      {index + 1}
-                    </span>
-                    <span className="pt-1">{instruction}</span>
-                  </li>
-                ))}
+                {recipe.instructions && recipe.instructions.length > 0 ? (
+                  recipe.instructions.map((instruction, index) => (
+                    <li
+                      key={index}
+                      className="flex gap-4 text-gf-text-primary dark:text-neutral-300"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gf-cta text-sm font-semibold text-white dark:bg-gf-cta">
+                        {index + 1}
+                      </span>
+                      <span className="pt-1">{instruction}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gf-text-secondary dark:text-neutral-400">Nema uputa</li>
+                )}
               </ol>
             </div>
           </div>

@@ -23,11 +23,13 @@ export function ImagePlaceholder({
   alt = "Image"
 }: ImagePlaceholderProps) {
   const [imageError, setImageError] = useState(false);
-  const [showFallback, setShowFallback] = useState(!imageUrl);
+  // Provjeri da li imageUrl postoji i nije prazan string
+  const hasValidImageUrl = imageUrl && imageUrl.trim() !== "";
+  const [showFallback, setShowFallback] = useState(!hasValidImageUrl);
   const [iconError, setIconError] = useState(false);
 
   // Ako postoji stvarna slika i nije došlo do greške, prikaži je
-  if (imageUrl && !imageError && !showFallback) {
+  if (hasValidImageUrl && !imageError && !showFallback) {
     return (
       <div className="relative h-full w-full overflow-hidden">
         <motion.div
@@ -45,6 +47,10 @@ export function ImagePlaceholder({
             onError={() => {
               setImageError(true);
               setShowFallback(true);
+            }}
+            onLoad={() => {
+              // Ako se slika uspješno učita, osiguraj da fallback nije prikazan
+              setShowFallback(false);
             }}
           />
         </motion.div>

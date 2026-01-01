@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir, unlink } from "fs/promises";
+import { writeFile, mkdir, unlink, readFile } from "fs/promises";
+import { existsSync } from "fs";
 import path from "path";
 import { BlogPost, BlogPostMetadata } from "@/types";
-import { mockBlogPosts } from "@/data/mockData";
 import {
   readBlogMetadata,
   writeBlogMetadata,
@@ -13,16 +13,37 @@ import {
   calculateReadTime,
 } from "@/lib/blogUtils";
 
+const deletedBlogPostsFilePath = path.join(process.cwd(), "data", "deletedBlogPosts.json");
+
+async function readDeletedBlogPostsFile(): Promise<string[]> {
+  try {
+    if (existsSync(deletedBlogPostsFilePath)) {
+      const fileContents = await readFile(deletedBlogPostsFilePath, "utf-8");
+      return JSON.parse(fileContents);
+    }
+    return [];
+  } catch (error) {
+    console.error("Error reading deleted blog posts file:", error);
+    return [];
+  }
+}
+
+async function writeDeletedBlogPostsFile(deletedIds: string[]): Promise<void> {
+  await mkdir(path.dirname(deletedBlogPostsFilePath), { recursive: true });
+  await writeFile(deletedBlogPostsFilePath, JSON.stringify(deletedIds, null, 2), "utf8");
+}
+
 async function getAllPosts(): Promise<BlogPost[]> {
   const dynamicPosts = await getAllBlogPosts();
+  const deletedIds = await readDeletedBlogPostsFile();
   
-  // Filtriraj mock postove - ako postoji dinamički post s istim ID-om, koristi dinamički
-  const filteredMockPosts = mockBlogPosts.filter(
-    (mockPost) => !dynamicPosts.some((dynamicPost) => dynamicPost.id === mockPost.id)
+  // Vrati samo dinamičke postove - ukloni mock postove
+  // Filtriraj dinamičke postove - samo oni koji nisu obrisani
+  const filteredDynamicPosts = dynamicPosts.filter(
+    (post) => !deletedIds.includes(post.id)
   );
   
-  // Dinamički postovi imaju prioritet - vraćaju se nakon mock postova
-  return [...filteredMockPosts, ...dynamicPosts];
+  return filteredDynamicPosts;
 }
 
 export async function GET(
@@ -118,23 +139,10 @@ export async function PUT(
       metadataList[metadataIndex] = updatedMetadata;
       await writeBlogMetadata(metadataList);
     } else {
-      // Provjeri da li je mock post - ako jest, dodaj kao novi dinamički
-      const isMockPost = mockBlogPosts.some((p) => p.id === id);
-      if (isMockPost) {
-        // Provjeri da li već postoji post s istim ID-om u metadata
-        const existingDuplicateIndex = metadataList.findIndex((p) => p.id === id);
-        if (existingDuplicateIndex !== -1) {
-          metadataList[existingDuplicateIndex] = updatedMetadata;
-        } else {
-          metadataList.push(updatedMetadata);
-        }
-        await writeBlogMetadata(metadataList);
-      } else {
-        return NextResponse.json(
-          { message: "Post not found in database" },
-          { status: 404 }
-        );
-      }
+      return NextResponse.json(
+        { message: "Post not found in database" },
+        { status: 404 }
+      );
     }
 
     const updatedPost: BlogPost = {
@@ -169,6 +177,13 @@ export async function DELETE(
     } catch (error) {
       // Ignoriraj grešku ako fajl ne postoji
       console.log(`Markdown file not found for ${id}`);
+    }
+
+    // Dodaj ID u listu obrisanih postova (kako se ne bi prikazivao ni mock verzija)
+    const deletedIds = await readDeletedBlogPostsFile();
+    if (!deletedIds.includes(id)) {
+      deletedIds.push(id);
+      await writeDeletedBlogPostsFile(deletedIds);
     }
 
     return NextResponse.json({ message: "Post deleted successfully" });

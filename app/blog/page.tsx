@@ -17,7 +17,9 @@ export default function BlogPage() {
   useEffect(() => {
     async function loadPosts() {
       try {
-        const response = await fetch("/api/blog");
+        const response = await fetch("/api/blog", {
+          cache: 'no-store',
+        });
         if (response.ok) {
           const posts = await response.json();
           setAllPosts(posts);
@@ -117,7 +119,7 @@ export default function BlogPage() {
                 <Link href={`/blog/${post.id}`}>
                   <div className="relative aspect-video w-full overflow-hidden">
                     <ImagePlaceholder
-                      imageUrl={post.image}
+                      imageUrl={post.image || undefined}
                       alt={post.title}
                       emoji={["📚", "💡", "✨"][index % 3]}
                       gradient="from-gf-safe/40 via-gf-cta/30 to-gf-safe/40"

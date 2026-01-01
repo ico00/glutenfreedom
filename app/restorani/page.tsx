@@ -4,21 +4,22 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { mockRestaurants } from "@/data/mockData";
-import { MapPin, Star, Search, UtensilsCrossed } from "lucide-react";
+import { MapPin, Search, UtensilsCrossed } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { Restaurant } from "@/types";
 
 export default function RestoraniPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState<string>("sve");
-  const [selectedGF, setSelectedGF] = useState<string>("sve");
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>(mockRestaurants);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadRestaurants() {
       try {
-        const response = await fetch("/api/restorani");
+        const response = await fetch("/api/restorani", {
+          cache: 'no-store',
+        });
         if (response.ok) {
           const restaurants = await response.json();
           setAllRestaurants(restaurants);
@@ -46,14 +47,9 @@ export default function RestoraniPage() {
       const matchesCuisine =
         selectedCuisine === "sve" || restaurant.cuisine.includes(selectedCuisine);
 
-      const matchesGF =
-        selectedGF === "sve" ||
-        (selectedGF === "potpuno" && restaurant.glutenFreeOptions === "potpuno") ||
-        (selectedGF === "djelomično" && restaurant.glutenFreeOptions === "djelomično");
-
-      return matchesSearch && matchesCuisine && matchesGF;
+      return matchesSearch && matchesCuisine;
     });
-  }, [searchQuery, selectedCuisine, selectedGF, allRestaurants]);
+  }, [searchQuery, selectedCuisine, allRestaurants]);
 
   return (
     <div className="bg-gf-bg-card py-12 dark:bg-neutral-900">
@@ -104,15 +100,6 @@ export default function RestoraniPage() {
                 </option>
               ))}
             </select>
-            <select
-              value={selectedGF}
-              onChange={(e) => setSelectedGF(e.target.value)}
-              className="rounded-lg border border-neutral-300 bg-gf-bg-card px-4 py-2 text-sm text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            >
-              <option value="sve">Sve opcije</option>
-              <option value="potpuno">Potpuno bezglutenski</option>
-              <option value="djelomično">Djelomično bezglutenski</option>
-            </select>
           </div>
         </div>
 
@@ -145,29 +132,6 @@ export default function RestoraniPage() {
                     />
                   </div>
                   <div className="p-6">
-                    <div className="mb-3 flex items-center justify-between">
-                      <motion.span
-                        whileHover={{ scale: 1.1 }}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
-                          restaurant.glutenFreeOptions === "potpuno"
-                            ? "bg-gf-safe/20 text-gf-safe dark:bg-gf-safe/30 dark:text-gf-safe"
-                            : "bg-gf-caution/20 text-gf-caution dark:bg-gf-caution/30 dark:text-gf-caution"
-                        }`}
-                      >
-                        {restaurant.glutenFreeOptions === "potpuno"
-                          ? "Potpuno GF"
-                          : "Djelomično GF"}
-                      </motion.span>
-                      {restaurant.rating && (
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          className="flex items-center gap-1 text-sm text-gf-text-secondary dark:text-neutral-400"
-                        >
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-semibold">{restaurant.rating}</span>
-                        </motion.div>
-                      )}
-                    </div>
                     <h3 className="mb-3 text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
                       {restaurant.name}
                     </h3>

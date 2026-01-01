@@ -1,0 +1,14 @@
+[
+  {
+    "id": "8815e523-652b-4804-a313-7cf4f6988387",
+    "name": "Esplanade",
+    "description": "Prestižnom zagrebačkom hotelu Esplanade na predstavljanju Bosk gluten free standarda uručen je prvi takav certifikat u Hrvatskoj.\r\nUvođenje BOSK gluten free standarda omogućit će osobama na bezglutenskom režimu prehrane posjet restoranima i hotelima.",
+    "address": "Mihanovićeva ulica 1, Zagreb",
+    "website": "https://esplanade.hr/hr/hotel-room/gluten-free-standard/",
+    "cuisine": [],
+    "location": {
+      "lat": 45.80554,
+      "lng": 15.97601
+    }
+  }
+]

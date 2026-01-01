@@ -1,15 +1,53 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { mockRestaurants } from "@/data/mockData";
-import { MapPin, Star, UtensilsCrossed, Sparkles } from "lucide-react";
+import { MapPin, UtensilsCrossed, Sparkles } from "lucide-react";
 import { ImagePlaceholder } from "./ImagePlaceholder";
+import { Restaurant } from "@/types";
 
 const restaurantEmojis = ["🍽️", "🥗", "🍴"];
 
 export function RestaurantsPreview() {
-  const restaurants = mockRestaurants.slice(0, 3);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadRestaurants() {
+      try {
+        const response = await fetch("/api/restorani", {
+          cache: 'no-store',
+        });
+        if (response.ok) {
+          const allRestaurants = await response.json();
+          // Uzmi prva 3 restorana
+          setRestaurants(allRestaurants.slice(0, 3));
+        }
+      } catch (error) {
+        console.error("Error loading restaurants:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadRestaurants();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <section className="relative bg-gf-bg-card py-20 dark:bg-neutral-900">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center text-gf-text-secondary dark:text-neutral-400">
+            Učitavanje...
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (restaurants.length === 0) {
+    return null;
+  }
 
   return (
     <section className="relative bg-gf-bg-card py-20 dark:bg-neutral-900">
@@ -51,7 +89,9 @@ export function RestaurantsPreview() {
               <Link href={`/restorani/${restaurant.id}`}>
                 <div className="relative aspect-video w-full overflow-hidden">
                   <ImagePlaceholder
-                    emoji={restaurantEmojis[index]}
+                    imageUrl={restaurant.image}
+                    alt={restaurant.name}
+                    emoji={restaurantEmojis[index % restaurantEmojis.length]}
                     gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
                   />
                   <motion.div
@@ -61,29 +101,6 @@ export function RestaurantsPreview() {
                   />
                 </div>
                 <div className="p-6">
-                  <div className="mb-3 flex items-center justify-between">
-                    <motion.span
-                      whileHover={{ scale: 1.1 }}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
-                        restaurant.glutenFreeOptions === "potpuno"
-                          ? "bg-gf-safe/20 text-gf-safe dark:bg-gf-safe/30 dark:text-gf-safe"
-                          : "bg-gf-caution/20 text-gf-caution dark:bg-gf-caution/30 dark:text-gf-caution"
-                      }`}
-                    >
-                      {restaurant.glutenFreeOptions === "potpuno"
-                        ? "Potpuno GF"
-                        : "Djelomično GF"}
-                    </motion.span>
-                    {restaurant.rating && (
-                      <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        className="flex items-center gap-1 text-sm text-gf-text-secondary dark:text-neutral-400"
-                      >
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold">{restaurant.rating}</span>
-                      </motion.div>
-                    )}
-                  </div>
                   <h3 className="mb-3 text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
                     {restaurant.name}
                   </h3>

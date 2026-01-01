@@ -1,2 +1,35 @@
-[]
-
+[
+  {
+    "id": "e3344caf-284c-4adc-b242-54a029c38018",
+    "title": "Tapioka muffini",
+    "description": "Tapioka muffini ",
+    "image": "/images/recipes/083351e7-d7f6-46c5-ab69-8c1df7b00ae4.jpeg",
+    "prepTime": 5,
+    "cookTime": 30,
+    "servings": 10,
+    "difficulty": "lako",
+    "tags": [
+      "pecivo",
+      "kruh",
+      "muffin"
+    ],
+    "category": "pecivo, kruh",
+    "createdAt": "2026-01-01"
+  },
+  {
+    "id": "bf74dc27-5afb-405c-922e-f161aaca5a8c",
+    "title": "Fritule",
+    "description": "Božićna poslastica",
+    "image": "/images/recipes/68ad46f4-042e-4150-9bc3-316680de9e8e.jpg",
+    "prepTime": 10,
+    "cookTime": 15,
+    "servings": 20,
+    "difficulty": "lako",
+    "tags": [
+      "fritule",
+      "božić"
+    ],
+    "category": "deserti",
+    "createdAt": "2026-01-01"
+  }
+]

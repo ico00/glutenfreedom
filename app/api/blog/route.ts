@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, readFile } from "fs/promises";
+import { existsSync } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { BlogPost, BlogPostMetadata } from "@/types";
@@ -12,23 +13,37 @@ import {
   calculateReadTime,
 } from "@/lib/blogUtils";
 
+const deletedBlogPostsFilePath = path.join(process.cwd(), "data", "deletedBlogPosts.json");
+
+async function readDeletedBlogPostsFile(): Promise<string[]> {
+  try {
+    if (existsSync(deletedBlogPostsFilePath)) {
+      const fileContents = await readFile(deletedBlogPostsFilePath, "utf-8");
+      return JSON.parse(fileContents);
+    }
+    return [];
+  } catch (error) {
+    console.error("Error reading deleted blog posts file:", error);
+    return [];
+  }
+}
+
+async function writeDeletedBlogPostsFile(deletedIds: string[]): Promise<void> {
+  await mkdir(path.dirname(deletedBlogPostsFilePath), { recursive: true });
+  await writeFile(deletedBlogPostsFilePath, JSON.stringify(deletedIds, null, 2), "utf8");
+}
+
 export async function GET() {
   const dynamicPosts = await getAllBlogPosts();
+  const deletedIds = await readDeletedBlogPostsFile();
   
-  // Filtriraj mock postove - ako postoji dinamički post s istim ID-om, koristi dinamički
-  // ALI samo ako dinamički post ima content (nije prazan)
-  const filteredMockPosts = mockBlogPosts.filter(
-    (mockPost) => {
-      const dynamicPost = dynamicPosts.find((dp) => dp.id === mockPost.id);
-      // Koristi mock post ako dinamički post ne postoji ILI ako dinamički post nema content
-      return !dynamicPost || !dynamicPost.content || dynamicPost.content.trim() === "";
-    }
+  // Vrati samo dinamičke postove - ukloni mock postove
+  // Filtriraj dinamičke postove - samo oni koji imaju content i nisu obrisani
+  const validDynamicPosts = dynamicPosts.filter(
+    (post) => post.content && post.content.trim() !== "" && !deletedIds.includes(post.id)
   );
   
-  // Filtriraj dinamičke postove - samo oni koji imaju content
-  const validDynamicPosts = dynamicPosts.filter((post) => post.content && post.content.trim() !== "");
-  
-  return NextResponse.json([...filteredMockPosts, ...validDynamicPosts]);
+  return NextResponse.json(validDynamicPosts);
 }
 
 export async function POST(request: Request) {

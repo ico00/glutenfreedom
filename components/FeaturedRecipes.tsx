@@ -2,14 +2,36 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { mockRecipes } from "@/data/mockData";
 import { Clock, Users, ChefHat, Sparkles } from "lucide-react";
 import { ImagePlaceholder } from "./ImagePlaceholder";
+import { useState, useEffect } from "react";
+import type { Recipe } from "@/types";
 
 const recipeEmojis = ["🍞", "🍫", "🍝"];
 
 export function FeaturedRecipes() {
-  const recipes = mockRecipes.slice(0, 3);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+
+  useEffect(() => {
+    fetch("/api/recepti", {
+      cache: 'no-store',
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setRecipes(data.slice(0, 3));
+        }
+      })
+      .catch((error) => {
+        console.error("Error loading recipes:", error);
+        setRecipes([]);
+      });
+  }, []);
+
+  // Ne prikazuj sekciju ako nema recepata
+  if (recipes.length === 0) {
+    return null;
+  }
 
   return (
     <section className="relative bg-gf-bg-soft py-20 dark:bg-neutral-800">

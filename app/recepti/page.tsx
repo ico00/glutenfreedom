@@ -3,35 +3,39 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { mockRecipes } from "@/data/mockData";
 import { Clock, Users, Search, ChefHat } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import type { Recipe } from "@/types";
 
 export default function ReceptiPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [recipes, setRecipes] = useState<Recipe[]>(mockRecipes);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Učitaj dinamičke recepte
-    fetch("/api/recepti")
+    fetch("/api/recepti", {
+      cache: 'no-store',
+    })
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setRecipes([...mockRecipes, ...data]);
+          setRecipes(data);
+        } else {
+          console.error("API did not return an array:", data);
+          setRecipes([]);
         }
       })
-      .catch(() => {
-        // Ako ne uspije, koristi samo mock podatke
-        setRecipes(mockRecipes);
+      .catch((error) => {
+        console.error("Error loading recipes:", error);
+        setRecipes([]);
       })
       .finally(() => setIsLoading(false));
   }, []);
   const [selectedCategory, setSelectedCategory] = useState<string>("sve");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("sve");
 
-  const categories = ["sve", ...Array.from(new Set(mockRecipes.map((r) => r.category)))];
+  const categories = ["sve", ...Array.from(new Set(recipes.map((r) => r.category)))];
   const difficulties = ["sve", "lako", "srednje", "teško"];
 
   const filteredRecipes = useMemo(() => {
@@ -47,7 +51,7 @@ export default function ReceptiPage() {
 
       return matchesSearch && matchesCategory && matchesDifficulty;
     });
-  }, [searchQuery, selectedCategory, selectedDifficulty]);
+  }, [searchQuery, selectedCategory, selectedDifficulty, recipes]);
 
   return (
     <div className="bg-gf-bg-card py-12 dark:bg-neutral-900">
@@ -112,7 +116,13 @@ export default function ReceptiPage() {
         </div>
 
         {/* Recipes Grid */}
-        {filteredRecipes.length > 0 ? (
+        {isLoading ? (
+          <div className="py-12 text-center">
+            <p className="text-lg text-gf-text-secondary dark:text-neutral-400">
+              Učitavanje recepata...
+            </p>
+          </div>
+        ) : filteredRecipes.length > 0 ? (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {filteredRecipes.map((recipe, index) => (
               <motion.article
