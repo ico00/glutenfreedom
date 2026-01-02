@@ -48,5 +48,20 @@
     "price": 2,
     "weight": 40,
     "image": "/images/products/89ad3ce3-13ae-4328-8ae8-21010decd0f5-IMG_9215.jpeg"
+  },
+  {
+    "id": "661580d7-9bed-4aa4-81ea-e9b1c314a8d0",
+    "name": "Zimska salama",
+    "description": "Ova salama me održava na životu. ",
+    "brand": "Gavrilović",
+    "category": "ostalo",
+    "store": "Konzum",
+    "tags": [
+      "salama"
+    ],
+    "certified": true,
+    "price": 29,
+    "weight": 1000,
+    "image": "/images/products/661580d7-9bed-4aa4-81ea-e9b1c314a8d0-Zimska-salama-300g-560x784px.png"
   }
 ]

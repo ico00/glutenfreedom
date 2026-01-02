@@ -3,6 +3,7 @@ export interface Recipe {
   title: string;
   description: string;
   image: string;
+  gallery?: string[]; // Galerija slika
   prepTime: number;
   cookTime: number;
   servings: number;
@@ -20,6 +21,7 @@ export interface RecipeMetadata {
   title: string;
   description: string;
   image: string;
+  gallery?: string[]; // Galerija slika
   prepTime: number;
   cookTime: number;
   servings: number;

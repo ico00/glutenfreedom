@@ -72,6 +72,33 @@ export async function POST(request: NextRequest) {
       imagePath = `/images/recipes/${fileName}`;
     }
 
+    // Upload galerije slika
+    const galleryCount = parseInt(formData.get("galleryCount") as string) || 0;
+    const galleryPaths: string[] = [];
+
+    for (let i = 0; i < galleryCount; i++) {
+      const galleryFile = formData.get(`gallery_${i}`) as File | null;
+      if (galleryFile && galleryFile.size > 0) {
+        const bytes = await galleryFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Generiraj jedinstveni naziv datoteke
+        const fileExtension = path.extname(galleryFile.name);
+        const fileName = `${randomUUID()}${fileExtension}`;
+        const uploadPath = path.join(process.cwd(), "public", "images", "recipes", "gallery", fileName);
+
+        // Osiguraj da folder postoji
+        const uploadDir = path.dirname(uploadPath);
+        if (!existsSync(uploadDir)) {
+          await mkdir(uploadDir, { recursive: true });
+        }
+
+        // Spremi sliku
+        await writeFile(uploadPath, buffer);
+        galleryPaths.push(`/images/recipes/gallery/${fileName}`);
+      }
+    }
+
     const recipeId = randomUUID();
 
     // Kreiraj metadata (bez ingredients i instructions)
@@ -80,6 +107,7 @@ export async function POST(request: NextRequest) {
       title,
       description,
       image: imagePath,
+      gallery: galleryPaths.length > 0 ? galleryPaths : undefined,
       prepTime,
       cookTime,
       servings,

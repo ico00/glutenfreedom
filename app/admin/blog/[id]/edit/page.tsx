@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Upload, X, Plus } from "lucide-react";
 import { BlogPost } from "@/types";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { DatePicker } from "@/components/DatePicker";
 
 // Predefinirane kategorije za blog postove
 const BLOG_CATEGORIES = [
@@ -40,6 +41,8 @@ export default function EditBlogPostPage() {
     createdAt: "",
   });
   const [newTag, setNewTag] = useState("");
+  const [existingTags, setExistingTags] = useState<string[]>([]); // Postojeći tagovi iz svih postova
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
 
   useEffect(() => {
     async function loadPost() {
@@ -50,19 +53,32 @@ export default function EditBlogPostPage() {
         if (response.ok) {
           const post: BlogPost = await response.json();
           // Konvertiraj category u array ako je string (backward compatibility)
-          const categoryArray = Array.isArray(post.category) 
-            ? post.category 
-            : post.category ? [post.category] : [];
-          
-          setFormData({
-            title: post.title,
-            excerpt: post.excerpt,
-            content: post.content,
-            image: null,
-            tags: post.tags, // tags je već array
-            category: categoryArray,
-            createdAt: post.createdAt,
-          });
+              const categoryArray = Array.isArray(post.category) 
+                ? post.category 
+                : post.category ? [post.category] : [];
+
+              // Osiguraj da tags uvijek bude array
+              // Ako je string, parsiraj ga (može biti "tag1, tag2" ili samo "tag1")
+              let tagsArray: string[] = [];
+              if (Array.isArray(post.tags)) {
+                tagsArray = post.tags;
+              } else if (typeof post.tags === 'string') {
+                // Ako je string, parsiraj ga po zarezu
+                tagsArray = post.tags
+                  .split(',')
+                  .map(tag => tag.trim())
+                  .filter(tag => tag.length > 0);
+              }
+
+              setFormData({
+                title: post.title,
+                excerpt: post.excerpt,
+                content: post.content,
+                image: null,
+                tags: tagsArray, // Osiguraj da je uvijek array
+                category: categoryArray,
+                createdAt: post.createdAt,
+              });
           setImagePreview(post.image || null);
           setExistingGalleryUrls(post.gallery || []);
           setNewGalleryFiles([]);
@@ -79,6 +95,57 @@ export default function EditBlogPostPage() {
       loadPost();
     }
   }, [postId]);
+
+  // Učitaj sve postojeće tagove iz blog postova
+  useEffect(() => {
+    async function loadExistingTags() {
+      try {
+        const response = await fetch("/api/blog", {
+          cache: 'no-store',
+        });
+        if (response.ok) {
+          const posts: BlogPost[] = await response.json();
+          // Ekstraktuj sve tagove iz svih postova (zadrži originalni case)
+          const allTags = posts.flatMap((post) => {
+            if (Array.isArray(post.tags)) {
+              return post.tags;
+            }
+            return post.tags ? [post.tags] : [];
+          });
+          // Ukloni duplikate (case-insensitive) ali zadrži originalni case prvog pojavljivanja
+          const tagMap = new Map<string, string>();
+          allTags.forEach((tag) => {
+            const lowerTag = tag.toLowerCase();
+            if (!tagMap.has(lowerTag)) {
+              tagMap.set(lowerTag, tag);
+            }
+          });
+          const uniqueTags = Array.from(tagMap.values()).sort();
+          setExistingTags(uniqueTags);
+        }
+      } catch (error) {
+        console.error("Error loading existing tags:", error);
+      }
+    }
+    loadExistingTags();
+  }, []);
+
+  // Zatvori dropdown kada se klikne izvan
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showTagSuggestions && !target.closest('.tag-autocomplete-container')) {
+        setShowTagSuggestions(false);
+      }
+    };
+
+    if (showTagSuggestions) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showTagSuggestions]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -399,26 +466,78 @@ export default function EditBlogPostPage() {
             </label>
             <div className="space-y-3">
               {/* Input za dodavanje novog taga */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newTag.trim()) {
-                      e.preventDefault();
-                      if (!formData.tags.includes(newTag.trim())) {
-                        setFormData({
-                          ...formData,
-                          tags: [...formData.tags, newTag.trim()],
-                        });
+              <div className="relative flex gap-2">
+                <div className="relative flex-1 tag-autocomplete-container">
+                  <input
+                    type="text"
+                    value={newTag}
+                    onChange={(e) => {
+                      setNewTag(e.target.value);
+                      setShowTagSuggestions(e.target.value.length > 0);
+                    }}
+                    onFocus={() => {
+                      if (newTag.length > 0) {
+                        setShowTagSuggestions(true);
                       }
-                      setNewTag("");
-                    }
-                  }}
-                  placeholder="Unesi tag i pritisni Enter"
-                  className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                />
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newTag.trim()) {
+                        e.preventDefault();
+                        if (!formData.tags.includes(newTag.trim())) {
+                          setFormData({
+                            ...formData,
+                            tags: [...formData.tags, newTag.trim()],
+                          });
+                        }
+                        setNewTag("");
+                        setShowTagSuggestions(false);
+                      } else if (e.key === "Escape") {
+                        setShowTagSuggestions(false);
+                      }
+                    }}
+                    placeholder="Unesi tag i pritisni Enter"
+                    className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  />
+                  
+                  {/* Autocomplete dropdown */}
+                  {showTagSuggestions && newTag.length > 0 && (
+                    <div className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
+                      {existingTags
+                        .filter((tag) => 
+                          tag.toLowerCase().includes(newTag.toLowerCase()) &&
+                          !formData.tags.map(t => t.toLowerCase()).includes(tag)
+                        )
+                        .slice(0, 10)
+                        .map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => {
+                              if (!formData.tags.includes(tag)) {
+                                setFormData({
+                                  ...formData,
+                                  tags: [...formData.tags, tag],
+                                });
+                              }
+                              setNewTag("");
+                              setShowTagSuggestions(false);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gf-text-primary hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      {existingTags.filter((tag) => 
+                        tag.toLowerCase().includes(newTag.toLowerCase()) &&
+                        !formData.tags.map(t => t.toLowerCase()).includes(tag)
+                      ).length === 0 && (
+                        <div className="px-4 py-2 text-sm text-gf-text-secondary dark:text-neutral-400">
+                          Nema predloženih tagova
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -470,16 +589,12 @@ export default function EditBlogPostPage() {
 
           {/* Datum */}
           <div>
-            <label htmlFor="createdAt" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Datum objave *
-            </label>
-            <input
-              type="date"
+            <DatePicker
               id="createdAt"
-              required
               value={formData.createdAt}
-              onChange={(e) => setFormData({ ...formData, createdAt: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              onChange={(value) => setFormData({ ...formData, createdAt: value })}
+              required
+              className="w-full"
             />
             <p className="mt-1 text-xs text-gf-text-secondary dark:text-neutral-400">
               Odaberi datum kada je post objavljen

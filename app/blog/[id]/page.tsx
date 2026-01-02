@@ -56,6 +56,16 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
     notFound();
   }
 
+  // Helper funkcija za dohvaćanje tagova kao array
+  const getPostTags = (post: any): string[] => {
+    if (Array.isArray(post.tags)) {
+      return post.tags;
+    }
+    return post.tags ? [post.tags] : [];
+  };
+
+  const postTags = getPostTags(post);
+
   return (
     <div className="bg-gf-bg-card py-12 dark:bg-neutral-900">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -92,7 +102,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
           </h1>
 
           <div className="mb-8 flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
+            {postTags.map((tag) => (
               <span
                 key={tag}
                 className="rounded-full bg-gf-safe/20 px-3 py-1 text-sm font-medium text-gf-safe dark:bg-gf-safe/30 dark:text-gf-safe"

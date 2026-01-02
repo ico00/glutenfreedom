@@ -29,6 +29,7 @@ export default function EditProizvodPage() {
   const brands = [
     "Schär",
     "Barilla",
+    "Gavrilović",
     "Dr. Schär",
     "No Gluten No Problem",
     "Vitaminka",

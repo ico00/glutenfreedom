@@ -188,6 +188,10 @@ export async function POST(request: Request) {
 function htmlToMarkdown(html: string): string {
   let markdown = html;
   
+  // Prvo, zamijeni prazne paragrafe (<p></p> ili <p> </p>) s praznim paragrafom u Markdownu
+  // Koristimo &nbsp; ili razmak da osiguramo da se paragraf prikaže
+  markdown = markdown.replace(/<p>\s*<\/p>/g, '\n\n&nbsp;\n\n');
+  
   // Zamijeni HTML tagove s Markdown ekvivalentima
   markdown = markdown.replace(/<p>/g, '').replace(/<\/p>/g, '\n\n');
   markdown = markdown.replace(/<h1>/g, '# ').replace(/<\/h1>/g, '\n\n');
@@ -215,8 +219,9 @@ function htmlToMarkdown(html: string): string {
   // Ukloni sve preostale HTML tagove
   markdown = markdown.replace(/<[^>]+>/g, '');
   
-  // Očisti višestruke prazne linije
-  markdown = markdown.replace(/\n{3,}/g, '\n\n');
+  // Očisti višestruke prazne linije (ali zadrži &nbsp; za prazne paragrafe)
+  markdown = markdown.replace(/\n{4,}/g, '\n\n\n');
   
+  // Ukloni samo početne i završne prazne linije, ali zadrži &nbsp;
   return markdown.trim();
 }

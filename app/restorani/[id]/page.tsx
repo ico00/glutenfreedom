@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { MapPin, Phone, Globe, ArrowLeft, Facebook, Instagram } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import { GoogleMap } from "@/components/GoogleMap";
 import { Restaurant } from "@/types";
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
@@ -131,11 +132,11 @@ export default async function RestaurantDetailPage({
           <div className="mb-8 space-y-4">
             <div className="flex items-start gap-3">
               <MapPin className="mt-1 h-5 w-5 text-gf-text-muted dark:text-neutral-400" />
-              <div>
-                <p className="font-medium text-gf-text-primary dark:text-neutral-100">
+              <div className="flex-1">
+                <p className="mb-2 font-medium text-gf-text-primary dark:text-neutral-100">
                   Adresa
                 </p>
-                <p className="text-gf-text-secondary dark:text-neutral-400">
+                <p className="mb-4 text-gf-text-secondary dark:text-neutral-400">
                   {Array.isArray(restaurant.address) ? (
                     <ul className="list-disc list-inside space-y-1">
                       {restaurant.address.map((addr, index) => (
@@ -146,6 +147,11 @@ export default async function RestaurantDetailPage({
                     restaurant.address
                   )}
                 </p>
+                
+                {/* Google Maps */}
+                <div className="overflow-hidden rounded-lg">
+                  <GoogleMap restaurant={restaurant} height="300px" />
+                </div>
               </div>
             </div>
 
@@ -171,7 +177,7 @@ export default async function RestaurantDetailPage({
                 <Globe className="mt-1 h-5 w-5 text-gf-text-muted dark:text-neutral-400" />
                 <div className="flex-1">
                   <p className="mb-2 font-medium text-gf-text-primary dark:text-neutral-100">
-                    Društvene mreže
+                    Web/društvene mreže
                   </p>
                   <div className="flex flex-wrap gap-3">
                     {restaurant.website && (

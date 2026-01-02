@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Clock, Users, ArrowLeft } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import { GallerySection } from "@/components/GallerySection";
 import type { Recipe } from "@/types";
 import { getAllRecipes } from "@/lib/recipeUtils";
 
@@ -148,6 +149,11 @@ export default async function RecipeDetailPage({
               </ol>
             </div>
           </div>
+
+          {/* Galerija slika */}
+          {recipe.gallery && recipe.gallery.length > 0 && (
+            <GallerySection images={recipe.gallery} />
+          )}
         </article>
       </div>
     </div>

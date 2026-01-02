@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, X, Search, Package } from "lucide-react";
+import { ArrowLeft, Upload, X, Search, Package, Plus } from "lucide-react";
 import { Product } from "@/types";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 
@@ -27,10 +27,12 @@ export default function NoviReceptPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     image: null as File | null,
+    gallery: [] as File[],
     prepTime: "",
     cookTime: "",
     servings: "",
@@ -54,6 +56,30 @@ export default function NoviReceptPage() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      const newGallery = [...formData.gallery, ...files];
+      setFormData({ ...formData, gallery: newGallery });
+      
+      // Kreiraj preview za nove slike
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setGalleryPreviews((prev) => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const handleRemoveGalleryImage = (index: number) => {
+    const newGallery = formData.gallery.filter((_, i) => i !== index);
+    const newPreviews = galleryPreviews.filter((_, i) => i !== index);
+    setFormData({ ...formData, gallery: newGallery });
+    setGalleryPreviews(newPreviews);
   };
 
   const handleAddIngredient = () => {
@@ -173,6 +199,12 @@ export default function NoviReceptPage() {
       if (formData.image) {
         formDataToSend.append("image", formData.image);
       }
+
+      // Pošalji galeriju slika
+      formData.gallery.forEach((file, index) => {
+        formDataToSend.append(`gallery_${index}`, file);
+      });
+      formDataToSend.append("galleryCount", formData.gallery.length.toString());
 
       const response = await fetch("/api/recepti", {
         method: "POST",
@@ -381,6 +413,51 @@ export default function NoviReceptPage() {
                   className="hidden"
                 />
               </label>
+            </div>
+          </div>
+
+          {/* Galerija slika */}
+          <div className="rounded-2xl border border-neutral-200 bg-gf-bg-card p-6 dark:border-neutral-800 dark:bg-neutral-800">
+            <h2 className="mb-6 text-xl font-semibold text-gf-text-primary dark:text-neutral-100">
+              Galerija slika (opcionalno)
+            </h2>
+            <div className="space-y-4">
+              <label
+                htmlFor="gallery"
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-gf-text-primary transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
+              >
+                <Plus className="h-4 w-4" />
+                Dodaj slike u galeriju
+              </label>
+              <input
+                type="file"
+                id="gallery"
+                accept="image/*"
+                multiple
+                onChange={handleGalleryChange}
+                className="hidden"
+              />
+              
+              {galleryPreviews.length > 0 && (
+                <div className="grid grid-cols-4 gap-4">
+                  {galleryPreviews.map((preview, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={preview}
+                        alt={`Gallery ${index + 1}`}
+                        className="h-24 w-full rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveGalleryImage(index)}
+                        className="absolute -right-2 -top-2 rounded-full bg-gf-risk p-1 text-white hover:bg-gf-risk/80"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

@@ -33,6 +33,14 @@ export default function BlogPage() {
     loadPosts();
   }, []);
 
+  // Helper funkcija za dohvaćanje tagova kao array
+  const getPostTags = (post: BlogPost): string[] => {
+    if (Array.isArray(post.tags)) {
+      return post.tags;
+    }
+    return post.tags ? [post.tags] : [];
+  };
+
   // Ekstraktuj sve kategorije iz postova (podržava i string i array)
   const allCategories = allPosts.flatMap((post) => {
     if (Array.isArray(post.category)) {
@@ -44,10 +52,11 @@ export default function BlogPage() {
 
   const filteredPosts = useMemo(() => {
     const filtered = allPosts.filter((post) => {
+      const postTags = getPostTags(post);
       const matchesSearch =
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        postTags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
       // Provjeri da li post ima odabranu kategoriju (podržava i string i array)
       const postCategories = Array.isArray(post.category) 
@@ -165,7 +174,7 @@ export default function BlogPage() {
                       {post.excerpt}
                     </p>
                     <div className="mb-4 flex flex-wrap gap-2">
-                      {post.tags.map((tag, tagIndex) => (
+                      {getPostTags(post).map((tag, tagIndex) => (
                         <motion.span
                           key={tag}
                           initial={{ opacity: 0, scale: 0 }}

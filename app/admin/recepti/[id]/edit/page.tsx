@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, X, Search, Package } from "lucide-react";
+import { ArrowLeft, Upload, X, Search, Package, Plus } from "lucide-react";
 import { Recipe, Product } from "@/types";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 
@@ -30,6 +30,11 @@ export default function EditReceptPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [existingGalleryUrls, setExistingGalleryUrls] = useState<string[]>([]); // Postojeće slike (URL-ovi)
+  const [newGalleryFiles, setNewGalleryFiles] = useState<File[]>([]); // Nove slike (File objekti)
+  const [newGalleryPreviews, setNewGalleryPreviews] = useState<string[]>([]); // Preview za nove slike
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -69,6 +74,9 @@ export default function EditReceptPage() {
             category: recipe.category,
           });
           setImagePreview(recipe.image || null);
+          setExistingGalleryUrls(recipe.gallery || []);
+          setNewGalleryFiles([]);
+          setNewGalleryPreviews([]);
           
           // Ako kategorija nije u predefiniranoj listi, dodaj je privremeno
           if (recipe.category && !RECIPE_CATEGORIES.includes(recipe.category)) {
@@ -96,6 +104,98 @@ export default function EditReceptPage() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setNewGalleryFiles((prev) => [...prev, ...files]);
+      
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setNewGalleryPreviews((prev) => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const handleRemoveExistingGalleryImage = (index: number) => {
+    setExistingGalleryUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveNewGalleryImage = (index: number) => {
+    setNewGalleryFiles((prev) => prev.filter((_, i) => i !== index));
+    setNewGalleryPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Kombiniraj postojeće i nove slike za prikaz i drag & drop
+  const getAllGalleryItems = () => {
+    const existing = existingGalleryUrls.map((url, index) => ({
+      type: 'existing' as const,
+      url,
+      index,
+    }));
+    const newItems = newGalleryPreviews.map((preview, index) => ({
+      type: 'new' as const,
+      preview,
+      fileIndex: index,
+    }));
+    return [...existing, ...newItems];
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const items = getAllGalleryItems();
+    const draggedItem = items[draggedIndex];
+    const newItems = [...items];
+    newItems.splice(draggedIndex, 1);
+    newItems.splice(dropIndex, 0, draggedItem);
+
+    // Razdvoji postojeće i nove slike
+    const newExisting: string[] = [];
+    const newNewFiles: File[] = [];
+    const newNewPreviews: string[] = [];
+
+    newItems.forEach((item) => {
+      if (item.type === 'existing') {
+        newExisting.push(item.url);
+      } else {
+        newNewFiles.push(newGalleryFiles[item.fileIndex]);
+        newNewPreviews.push(item.preview);
+      }
+    });
+
+    setExistingGalleryUrls(newExisting);
+    setNewGalleryFiles(newNewFiles);
+    setNewGalleryPreviews(newNewPreviews);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleAddIngredient = () => {
@@ -215,6 +315,31 @@ export default function EditReceptPage() {
       if (formData.image) {
         formDataToSend.append("image", formData.image);
       }
+
+      // Pošalji galeriju u redoslijedu kako su prikazane (kombiniraj postojeće i nove)
+      const allGalleryItems = getAllGalleryItems();
+      const galleryOrder: Array<{ type: 'existing' | 'new'; index: number }> = [];
+      
+      allGalleryItems.forEach((item) => {
+        if (item.type === 'existing') {
+          galleryOrder.push({ type: 'existing', index: item.index });
+        } else {
+          galleryOrder.push({ type: 'new', index: item.fileIndex });
+        }
+      });
+
+      // Pošalji redoslijed galerije
+      formDataToSend.append("galleryOrder", JSON.stringify(galleryOrder));
+      
+      // Pošalji postojeće slike iz galerije (u originalnom redoslijedu)
+      formDataToSend.append("existingGallery", JSON.stringify(existingGalleryUrls));
+
+      // Pošalji nove slike
+      newGalleryFiles.forEach((file, index) => {
+        formDataToSend.append(`gallery_${index}`, file);
+      });
+      // Uvijek pošalji galleryCount, čak i ako je 0
+      formDataToSend.append("galleryCount", newGalleryFiles.length.toString());
 
       const response = await fetch(`/api/recepti/${recipeId}`, {
         method: "PUT",
@@ -439,6 +564,78 @@ export default function EditReceptPage() {
                   className="hidden"
                 />
               </label>
+            </div>
+          </div>
+
+          {/* Galerija slika */}
+          <div className="rounded-2xl border border-neutral-200 bg-gf-bg-card p-6 dark:border-neutral-800 dark:bg-neutral-800">
+            <h2 className="mb-6 text-xl font-semibold text-gf-text-primary dark:text-neutral-100">
+              Galerija slika
+            </h2>
+            <div className="space-y-4">
+              <label
+                htmlFor="gallery"
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-gf-text-primary transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
+              >
+                <Plus className="h-4 w-4" />
+                Dodaj slike u galeriju
+              </label>
+              <input
+                type="file"
+                id="gallery"
+                accept="image/*"
+                multiple
+                onChange={handleGalleryChange}
+                className="hidden"
+              />
+              
+              {(existingGalleryUrls.length > 0 || newGalleryPreviews.length > 0) && (
+                <div className="grid grid-cols-4 gap-4">
+                  {getAllGalleryItems().map((item, index) => (
+                    <div
+                      key={item.type === 'existing' ? `existing-${item.index}` : `new-${item.fileIndex}`}
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={`relative cursor-move transition-opacity ${
+                        draggedIndex === index ? 'opacity-50' : ''
+                      } ${
+                        dragOverIndex === index ? 'ring-2 ring-gf-cta' : ''
+                      }`}
+                    >
+                      <img
+                        src={item.type === 'existing' ? item.url : item.preview}
+                        alt={`Gallery ${index + 1}`}
+                        className="h-24 w-full rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (item.type === 'existing') {
+                            handleRemoveExistingGalleryImage(item.index);
+                          } else {
+                            handleRemoveNewGalleryImage(item.fileIndex);
+                          }
+                        }}
+                        className="absolute -right-2 -top-2 rounded-full bg-gf-risk p-1 text-white hover:bg-gf-risk/80 z-10"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                      <div className="absolute bottom-1 left-1 rounded bg-black/50 px-1.5 py-0.5 text-xs text-white">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(existingGalleryUrls.length > 0 || newGalleryPreviews.length > 0) && (
+                <p className="text-xs text-gf-text-secondary dark:text-neutral-400">
+                  💡 Povuci i spusti slike za promjenu redoslijeda
+                </p>
+              )}
             </div>
           </div>
 

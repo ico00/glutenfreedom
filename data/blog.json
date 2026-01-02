@@ -25,8 +25,10 @@
     "tags": [
       "deklaracija"
     ],
-    "category": "iskustva, ",
-    "readTime": 1,
+    "category": [
+      "iskustva, "
+    ],
+    "readTime": 2,
     "createdAt": "2026-01-01"
   },
   {
@@ -39,7 +41,7 @@
     "tags": [
       "brašno",
       "savjeti",
-      "iskustva"
+      "iskustvo"
     ],
     "category": [
       "iskustva, savjeti, ",
@@ -47,5 +49,24 @@
     ],
     "readTime": 2,
     "createdAt": "2026-01-01"
+  },
+  {
+    "id": "260102-kontaminacija-glutenom",
+    "title": "Kontaminacija glutenom",
+    "excerpt": "Ovo diže tlak još više od samog glutena. Kakva mrtva kontaminacija? Pa glutenom. A to može biti u hrani, prostoru oko vas, svugdje. I može biti neugodno zato se izbjegava u širokom luku. Što ste bolesniji, to je luk širi.",
+    "image": "/images/blog/260102-kontaminacija-glutenom-kontaminacija.jpg",
+    "gallery": [],
+    "author": "Ivica Drusany",
+    "tags": [
+      "savjeti",
+      "kontaminacija",
+      "čišćenje"
+    ],
+    "category": [
+      "Iskustva",
+      "Savjeti"
+    ],
+    "readTime": 2,
+    "createdAt": "2026-01-02"
   }
 ]

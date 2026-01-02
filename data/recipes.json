@@ -14,7 +14,11 @@
       "muffin"
     ],
     "category": "Pekara",
-    "createdAt": "2026-01-01"
+    "createdAt": "2026-01-01",
+    "gallery": [
+      "/images/recipes/gallery/e3344caf-284c-4adc-b242-54a029c38018-gallery-1767378289336-1.jpeg",
+      "/images/recipes/gallery/e3344caf-284c-4adc-b242-54a029c38018-gallery-1767378289335-0.jpeg"
+    ]
   },
   {
     "id": "bf74dc27-5afb-405c-922e-f161aaca5a8c",

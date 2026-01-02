@@ -124,6 +124,89 @@ export async function PUT(
       }
     }
 
+    // Obradi galeriju slika
+    const existingGalleryJson = formData.get("existingGallery") as string | null;
+    let existingGallery: string[] = [];
+    if (existingGalleryJson) {
+      try {
+        existingGallery = JSON.parse(existingGalleryJson);
+      } catch (e) {
+        console.error("Error parsing existingGallery:", e);
+        existingGallery = existingRecipe.gallery || [];
+      }
+    } else {
+      existingGallery = existingRecipe.gallery || [];
+    }
+
+    // Upload novih slika u galeriju
+    const galleryCount = parseInt(formData.get("galleryCount") as string) || 0;
+    const newGalleryPaths: string[] = [];
+
+    for (let i = 0; i < galleryCount; i++) {
+      const galleryFile = formData.get(`gallery_${i}`) as File | null;
+      if (galleryFile && galleryFile.size > 0) {
+        const bytes = await galleryFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Generiraj jedinstveni naziv datoteke
+        const fileExtension = path.extname(galleryFile.name);
+        const fileName = `${id}-gallery-${Date.now()}-${i}${fileExtension}`;
+        const uploadPath = path.join(process.cwd(), "public", "images", "recipes", "gallery", fileName);
+
+        // Osiguraj da folder postoji
+        const uploadDir = path.dirname(uploadPath);
+        if (!existsSync(uploadDir)) {
+          await mkdir(uploadDir, { recursive: true });
+        }
+
+        // Spremi sliku
+        await writeFile(uploadPath, buffer);
+        newGalleryPaths.push(`/images/recipes/gallery/${fileName}`);
+      }
+    }
+
+    // Kombiniraj postojeće i nove slike prema redoslijedu
+    const galleryOrderJson = formData.get("galleryOrder") as string | null;
+    let finalGallery: string[] = [];
+    
+    if (galleryOrderJson) {
+      try {
+        const galleryOrder: Array<{ type: 'existing' | 'new'; index: number }> = JSON.parse(galleryOrderJson);
+        // Rekonstruiraj galeriju prema redoslijedu
+        finalGallery = galleryOrder.map((item) => {
+          if (item.type === 'existing') {
+            return existingGallery[item.index];
+          } else {
+            return newGalleryPaths[item.index];
+          }
+        }).filter(Boolean); // Ukloni undefined vrijednosti
+      } catch (e) {
+        console.error("Error parsing galleryOrder:", e);
+        // Fallback: kombiniraj postojeće i nove slike u originalnom redoslijedu
+        finalGallery = [...existingGallery, ...newGalleryPaths];
+      }
+    } else {
+      // Fallback: kombiniraj postojeće i nove slike u originalnom redoslijedu
+      finalGallery = [...existingGallery, ...newGalleryPaths];
+    }
+
+    // Obriši stare slike iz galerije koje su uklonjene
+    const oldGallery = existingRecipe.gallery || [];
+    const removedImages = oldGallery.filter((url) => !existingGallery.includes(url));
+    
+    for (const removedImage of removedImages) {
+      if (removedImage.startsWith("/images/recipes/gallery/")) {
+        try {
+          const oldImagePath = path.join(process.cwd(), "public", removedImage);
+          if (existsSync(oldImagePath)) {
+            await unlink(oldImagePath);
+          }
+        } catch (error) {
+          console.error("Error deleting old gallery image:", error);
+        }
+      }
+    }
+
     // Ažuriraj metadata
     const metadataList = await readRecipeMetadata();
     const metadataIndex = metadataList.findIndex((m) => m.id === id);
@@ -137,6 +220,7 @@ export async function PUT(
       title,
       description,
       image: imagePath,
+      gallery: finalGallery.length > 0 ? finalGallery : undefined,
       prepTime,
       cookTime,
       servings,
@@ -192,6 +276,22 @@ export async function DELETE(
         }
       } catch (error) {
         console.error("Error deleting image:", error);
+      }
+    }
+
+    // Obriši galeriju slika ako postoji
+    if (metadata.gallery && Array.isArray(metadata.gallery)) {
+      for (const galleryImage of metadata.gallery) {
+        if (galleryImage.startsWith("/images/recipes/gallery/")) {
+          try {
+            const galleryImagePath = path.join(process.cwd(), "public", galleryImage);
+            if (existsSync(galleryImagePath)) {
+              await unlink(galleryImagePath);
+            }
+          } catch (error) {
+            console.error("Error deleting gallery image:", error);
+          }
+        }
       }
     }
 

@@ -2,7 +2,9 @@ Meni se to desilo par puta. Prvi put sam naučio lekciju sa Životinjskim carstv
 
 Sličnu situaciju sam imao i s **M&amp;Ms** koji pak imaju različita pravila oko proizvodnje u pojedinim državama. Negdje koriste ječam, negdje ne, uglavnom riskantna kupovina, pogotovo jer Mars ne garantira da nema kontaminacije.
 
-Veselja može biti i sa šećerom u prahu. Naime, **kupovni šećer u prahu** ima dodatak protiv zgrudnjavanja i on može biti od pšeničnog škroba pa samim time i nevini šečer postaje opasnost. Najbolje, odnosno najsigurnije je napraviti ga u kućnoj radinosti u mlincu za kavu ako ga imate.&nbsp;&nbsp;
+Veselja može biti i sa šećerom u prahu. Naime, **kupovni šećer u prahu** ima dodatak protiv zgrudnjavanja i on može biti od pšeničnog škroba pa samim time i nevini šečer postaje opasnost. Najbolje, odnosno najsigurnije je napraviti ga u kućnoj radinosti u mlincu za kavu ako ga imate.
+
+Ćevapi su trik za sebe, ako kupujete gotove, obavezno pogledajte deklaraciju jer se u njih često stavljaju krušne mrvice.
 
 Ako želite dići paranoju na najviši nivo i obična kava u kafiću može isto završiti problematično ako dobijete npr. **smeđi šećer** koji moooožda može biti zaslađen ječmom.
 
