@@ -1,14 +1,18 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { MapPin, Phone, Globe, ArrowLeft, Facebook, Instagram } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { GoogleMap } from "@/components/GoogleMap";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Restaurant } from "@/types";
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import { mockRestaurants } from "@/data/mockData";
+import { generateRestaurantMetadata } from "@/lib/metadata";
+import { generateRestaurantSchema, generateJsonLdScript } from "@/lib/seo";
 
 const restaurantsFilePath = path.join(process.cwd(), "data", "restaurants.json");
 const deletedRestaurantsFilePath = path.join(process.cwd(), "data", "deletedRestaurants.json");
@@ -76,10 +80,7 @@ export async function generateMetadata({
       title: "Restoran nije pronađen",
     };
   }
-  return {
-    title: `${restaurant.name} | Gluten Freedom`,
-    description: restaurant.description,
-  };
+  return generateRestaurantMetadata(restaurant);
 }
 
 export default async function RestaurantDetailPage({
@@ -94,9 +95,22 @@ export default async function RestaurantDetailPage({
     notFound();
   }
 
+  const restaurantSchema = generateRestaurantSchema(restaurant);
+
   return (
     <div className="bg-gf-bg-card py-12 dark:bg-neutral-900">
+      <Script
+        id="restaurant-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: generateJsonLdScript(restaurantSchema) }}
+      />
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <Breadcrumbs
+          items={[
+            { name: "Restorani", url: "/restorani" },
+            { name: restaurant.name, url: `/restorani/${restaurant.id}` },
+          ]}
+        />
         <Link
           href="/restorani"
           className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-gf-cta hover:text-gf-cta-hover dark:text-gf-cta dark:hover:text-gf-cta-hover"

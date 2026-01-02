@@ -1,12 +1,17 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { mockBlogPosts } from "@/data/mockData";
 import { Clock, ArrowLeft } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { GallerySection } from "@/components/GallerySection";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { generateBlogPostMetadata } from "@/lib/metadata";
+import { generateBlogPostingSchema, generateJsonLdScript } from "@/lib/seo";
+import type { BlogPost } from "@/types";
 
 // Učitaj dinamičke blog postove
 async function getAllPosts() {
@@ -41,10 +46,7 @@ export async function generateMetadata({
       title: "Članak nije pronađen",
     };
   }
-  return {
-    title: `${post.title} | Gluten Freedom`,
-    description: post.excerpt,
-  };
+  return generateBlogPostMetadata(post as BlogPost);
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ id: string }> }) {
@@ -65,10 +67,22 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
   };
 
   const postTags = getPostTags(post);
+  const blogPostingSchema = generateBlogPostingSchema(post as BlogPost);
 
   return (
     <div className="bg-gf-bg-card py-12 dark:bg-neutral-900">
+      <Script
+        id="blog-posting-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: generateJsonLdScript(blogPostingSchema) }}
+      />
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <Breadcrumbs
+          items={[
+            { name: "Blog", url: "/blog" },
+            { name: post.title, url: `/blog/${post.id}` },
+          ]}
+        />
         <Link
           href="/blog"
           className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gf-cta hover:text-gf-cta-hover dark:text-gf-cta dark:hover:text-gf-cta-hover"

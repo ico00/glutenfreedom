@@ -1,11 +1,15 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Clock, Users, ArrowLeft } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { GallerySection } from "@/components/GallerySection";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import type { Recipe } from "@/types";
 import { getAllRecipes } from "@/lib/recipeUtils";
+import { generateRecipeMetadata } from "@/lib/metadata";
+import { generateRecipeSchema, generateJsonLdScript } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const allRecipes = await getAllRecipes();
@@ -27,10 +31,7 @@ export async function generateMetadata({
       title: "Recept nije pronađen",
     };
   }
-  return {
-    title: `${recipe.title} | Gluten Freedom`,
-    description: recipe.description,
-  };
+  return generateRecipeMetadata(recipe);
 }
 
 export default async function RecipeDetailPage({
@@ -46,9 +47,22 @@ export default async function RecipeDetailPage({
     notFound();
   }
 
+  const recipeSchema = generateRecipeSchema(recipe);
+
   return (
     <div className="bg-gf-bg-card py-12 dark:bg-neutral-900">
+      <Script
+        id="recipe-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: generateJsonLdScript(recipeSchema) }}
+      />
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <Breadcrumbs
+          items={[
+            { name: "Recepti", url: "/recepti" },
+            { name: recipe.title, url: `/recepti/${recipe.id}` },
+          ]}
+        />
         <Link
           href="/recepti"
           className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-gf-cta hover:text-gf-cta-hover dark:text-gf-cta dark:hover:text-gf-cta-hover"

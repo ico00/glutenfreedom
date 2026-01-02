@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { generateOrganizationSchema, generateWebSiteSchema, generateJsonLdScript } from "@/lib/seo";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -58,9 +60,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationSchema = generateOrganizationSchema();
+  const websiteSchema = generateWebSiteSchema();
+
   return (
     <html lang="hr" suppressHydrationWarning>
       <body className={inter.className}>
+        <Script
+          id="organization-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: generateJsonLdScript(organizationSchema) }}
+        />
+        <Script
+          id="website-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: generateJsonLdScript(websiteSchema) }}
+        />
         <ErrorBoundary>
           <ThemeProvider>
             <div className="flex min-h-screen flex-col">
