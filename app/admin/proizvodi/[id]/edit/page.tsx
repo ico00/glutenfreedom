@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload } from "lucide-react";
 import { Product } from "@/types";
+import { getCsrfToken } from "@/lib/csrfClient";
 
 export default function EditProizvodPage() {
   const router = useRouter();
@@ -128,9 +129,13 @@ export default function EditProizvodPage() {
         submitData.append("image", formData.image);
       }
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/proizvodi/${productId}`, {
         method: "PUT",
         body: submitData,
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {

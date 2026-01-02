@@ -11,6 +11,8 @@ import {
   getFullRecipe,
   getAllRecipes,
 } from "@/lib/recipeUtils";
+import { protectApiRoute } from "@/lib/apiAuth";
+import { validateImageFile, generateSafeFilename, sanitizeString } from "@/lib/security";
 
 export async function GET(
   request: Request,
@@ -39,6 +41,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 10, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const { id } = await params;
     const formData = await request.formData();
 
@@ -49,9 +59,16 @@ export async function PUT(
       return NextResponse.json({ message: "Recept nije pronađen" }, { status: 404 });
     }
 
-    // Parsiraj form data
-    const title = (formData.get("title") as string) || existingRecipe.title;
-    const description = (formData.get("description") as string) || existingRecipe.description;
+    // Parsiraj i sanitiziraj form data
+    const title = sanitizeString((formData.get("title") as string) || existingRecipe.title, 200);
+    const description = sanitizeString((formData.get("description") as string) || existingRecipe.description, 1000);
+    
+    if (!title || title.length < 3) {
+      return NextResponse.json(
+        { success: false, message: "Naslov mora imati najmanje 3 znaka" },
+        { status: 400 }
+      );
+    }
     const prepTime = parseInt(formData.get("prepTime") as string) || existingRecipe.prepTime;
     const cookTime = parseInt(formData.get("cookTime") as string) || existingRecipe.cookTime;
     const servings = parseInt(formData.get("servings") as string) || existingRecipe.servings;
@@ -93,13 +110,21 @@ export async function PUT(
     const imageFile = formData.get("image") as File | null;
 
     if (imageFile && imageFile.size > 0) {
+      // Validiraj upload slike
+      const validation = await validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { success: false, message: validation.error },
+          { status: 400 }
+        );
+      }
+
       const bytes = await imageFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      // Generiraj jedinstveni naziv datoteke
-      const fileExtension = path.extname(imageFile.name);
-      const fileName = `${id}-${Date.now()}${fileExtension}`;
-      const uploadPath = path.join(process.cwd(), "public", "images", "recipes", fileName);
+      // Generiraj siguran naziv datoteke
+      const safeFileName = generateSafeFilename(imageFile.name, id);
+      const uploadPath = path.join(process.cwd(), "public", "images", "recipes", safeFileName);
 
       // Osiguraj da folder postoji
       const uploadDir = path.dirname(uploadPath);
@@ -109,7 +134,7 @@ export async function PUT(
 
       // Spremi sliku
       await writeFile(uploadPath, buffer);
-      imagePath = `/images/recipes/${fileName}`;
+      imagePath = `/images/recipes/${safeFileName}`;
 
       // Obriši staru sliku ako postoji i nije default
       if (existingRecipe.image && existingRecipe.image.startsWith("/images/recipes/")) {
@@ -145,13 +170,18 @@ export async function PUT(
     for (let i = 0; i < galleryCount; i++) {
       const galleryFile = formData.get(`gallery_${i}`) as File | null;
       if (galleryFile && galleryFile.size > 0) {
+        // Validiraj galeriju sliku
+        const validation = await validateImageFile(galleryFile);
+        if (!validation.valid) {
+          continue; // Preskoči nevaljanu sliku
+        }
+
         const bytes = await galleryFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Generiraj jedinstveni naziv datoteke
-        const fileExtension = path.extname(galleryFile.name);
-        const fileName = `${id}-gallery-${Date.now()}-${i}${fileExtension}`;
-        const uploadPath = path.join(process.cwd(), "public", "images", "recipes", "gallery", fileName);
+        // Generiraj siguran naziv datoteke
+        const safeFileName = generateSafeFilename(galleryFile.name, `${id}-gallery-${i}`);
+        const uploadPath = path.join(process.cwd(), "public", "images", "recipes", "gallery", safeFileName);
 
         // Osiguraj da folder postoji
         const uploadDir = path.dirname(uploadPath);
@@ -161,7 +191,7 @@ export async function PUT(
 
         // Spremi sliku
         await writeFile(uploadPath, buffer);
-        newGalleryPaths.push(`/images/recipes/gallery/${fileName}`);
+        newGalleryPaths.push(`/images/recipes/gallery/${safeFileName}`);
       }
     }
 
@@ -246,7 +276,7 @@ export async function PUT(
   } catch (error: any) {
     console.error("Error updating recipe:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Greška pri ažuriranju recepta" },
+      { success: false, message: "Greška pri ažuriranju recepta" },
       { status: 500 }
     );
   }
@@ -257,6 +287,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 5, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const { id } = await params;
     const metadataList = await readRecipeMetadata();
     const metadataIndex = metadataList.findIndex((m) => m.id === id);
@@ -313,7 +351,7 @@ export async function DELETE(
   } catch (error: any) {
     console.error("Error deleting recipe:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Greška pri brisanju recepta" },
+      { success: false, message: "Greška pri brisanju recepta" },
       { status: 500 }
     );
   }

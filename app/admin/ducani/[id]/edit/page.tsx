@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { Store } from "@/types";
+import { getCsrfToken } from "@/lib/csrfClient";
 
 export default function EditDucanPage() {
   const router = useRouter();
@@ -94,9 +95,13 @@ export default function EditDucanPage() {
         submitData.append("image_removed", "true");
       }
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/ducani/${storeId}`, {
         method: "PUT",
         body: submitData,
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {

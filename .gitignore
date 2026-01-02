@@ -12,6 +12,16 @@
 /.next/
 /out/
 
+# backups
+/backups/
+
+# logs
+/logs/
+
+# environment variables
+.env.local
+.env*.local
+
 # production
 /build
 

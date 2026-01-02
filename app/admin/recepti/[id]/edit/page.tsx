@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Upload, X, Search, Package, Plus } from "lucide-react";
 import { Recipe, Product } from "@/types";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import { getCsrfToken } from "@/lib/csrfClient";
 
 // Predefinirane kategorije za recepte
 const RECIPE_CATEGORIES = [
@@ -341,9 +342,13 @@ export default function EditReceptPage() {
       // Uvijek pošalji galleryCount, čak i ako je 0
       formDataToSend.append("galleryCount", newGalleryFiles.length.toString());
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/recepti/${recipeId}`, {
         method: "PUT",
         body: formDataToSend,
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {

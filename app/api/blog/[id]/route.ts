@@ -12,6 +12,11 @@ import {
   getAllBlogPosts,
   calculateReadTime,
 } from "@/lib/blogUtils";
+import { auth } from "@/auth";
+import { validateImageFile, generateSafeFilename, sanitizeHtml, sanitizeString } from "@/lib/security";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { verifyCsrfToken } from "@/lib/csrf";
+import { Logger } from "@/lib/logger";
 
 // Funkcija za generiranje slug-a iz naslova
 function slugify(text: string): string {
@@ -179,6 +184,39 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Provjeri autentifikaciju
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Provjeri rate limit
+    const clientIp = getClientIp(request);
+    const rateLimit = checkRateLimit(`blog-put-${clientIp}`, 10, 60000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { message: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
+    // Provjeri CSRF token
+    const csrfToken = request.headers.get("x-csrf-token");
+    if (!csrfToken || !(await verifyCsrfToken(csrfToken))) {
+      return NextResponse.json(
+        { message: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
     const formData = await request.formData();
     const allPosts = await getAllPosts();
@@ -191,9 +229,29 @@ export async function PUT(
     const existingPost = allPosts[postIndex];
     const galleryCount = parseInt(formData.get("galleryCount") as string) || 0;
 
-    // Uzmi nove vrijednosti
-    const newTitle = (formData.get("title") as string) || existingPost.title;
+    // Validiraj upload slike ako postoji
+    const imageFile = formData.get("image") as File | null;
+    if (imageFile && imageFile.size > 0) {
+      const validation = await validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { message: validation.error },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Uzmi nove vrijednosti i sanitiziraj
+    const newTitle = sanitizeString((formData.get("title") as string) || existingPost.title, 200);
+    const newExcerpt = sanitizeString((formData.get("excerpt") as string) || existingPost.excerpt, 500);
     const newCreatedAt = (formData.get("createdAt") as string) || existingPost.createdAt;
+    
+    if (!newTitle || newTitle.length < 3) {
+      return NextResponse.json(
+        { message: "Naslov mora imati najmanje 3 znaka" },
+        { status: 400 }
+      );
+    }
     
     // Provjeri da li se promijenio datum ili naslov - ako da, generiraj novi ID
     const titleChanged = newTitle !== existingPost.title;
@@ -228,6 +286,8 @@ export async function PUT(
 
     // Konvertiraj HTML u Markdown
     let content = (formData.get("content") as string) || existingPost.content;
+    // Sanitiziraj HTML prije konverzije
+    content = sanitizeHtml(content);
     content = htmlToMarkdown(content);
     const readTime = calculateReadTime(content);
 
@@ -250,17 +310,32 @@ export async function PUT(
       }
     }
 
+    // Parsiraj i validiraj tagove
+    let tags: string[] = existingPost.tags;
+    try {
+      const tagsData = formData.get("tags") as string;
+      if (tagsData) {
+        tags = JSON.parse(tagsData);
+        if (!Array.isArray(tags)) {
+          tags = existingPost.tags;
+        } else {
+          // Sanitiziraj svaki tag
+          tags = tags.map(tag => sanitizeString(tag, 50)).filter(Boolean);
+        }
+      }
+    } catch {
+      tags = existingPost.tags;
+    }
+
     // Kreiraj ažurirani metadata objekt
     const updatedMetadata: BlogPostMetadata = {
       id: newId, // Koristi novi ID ako je promijenjen
       title: newTitle,
-      excerpt: (formData.get("excerpt") as string) || existingPost.excerpt,
+      excerpt: newExcerpt,
       image: updatedImage,
       gallery: updatedGallery,
-      author: "Ivica Drusany", // Fiksni autor
-      tags: formData.get("tags")
-        ? JSON.parse(formData.get("tags") as string)
-        : existingPost.tags,
+      author: session.user.email || existingPost.author, // Koristi email iz sessiona
+      tags,
       category: (() => {
         const categoryData = formData.get("category") as string;
         if (!categoryData) return existingPost.category;
@@ -276,14 +351,14 @@ export async function PUT(
     };
 
     // Upload nove glavne slike ako je dodana
-    const imageFile = formData.get("image") as File | null;
     if (imageFile && imageFile.size > 0) {
       const uploadDir = path.join(process.cwd(), "public", "images", "blog");
       await mkdir(uploadDir, { recursive: true });
-      const filename = `${newId}-${imageFile.name}`; // Koristi novi ID
-      const filePath = path.join(uploadDir, filename);
+      // Generiraj siguran filename
+      const safeFilename = generateSafeFilename(imageFile.name, newId);
+      const filePath = path.join(uploadDir, safeFilename);
       await writeFile(filePath, Buffer.from(await imageFile.arrayBuffer()));
-      updatedMetadata.image = `/images/blog/${filename}`;
+      updatedMetadata.image = `/images/blog/${safeFilename}`;
     }
 
     // Obradi galeriju slika
@@ -363,7 +438,7 @@ export async function PUT(
   } catch (error) {
     console.error("Error updating post:", error);
     return NextResponse.json(
-      { message: "Error updating post", error: (error as Error).message },
+      { message: "Error updating post" },
       { status: 500 }
     );
   }
@@ -374,7 +449,49 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Provjeri autentifikaciju
+    const session = await auth();
+    const clientIp = getClientIp(request);
+    
+    if (!session?.user) {
+      await Logger.security("Unauthorized DELETE attempt to blog", undefined, clientIp);
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    
     const { id } = await params;
+    await Logger.info("Blog post deletion attempt", {
+      userId: session.user.email,
+      postId: id,
+      ip: clientIp,
+    });
+
+    // Provjeri rate limit
+    const clientIp = getClientIp(request);
+    const rateLimit = checkRateLimit(`blog-delete-${clientIp}`, 5, 60000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { message: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
+    // Provjeri CSRF token
+    const csrfToken = request.headers.get("x-csrf-token");
+    if (!csrfToken || !(await verifyCsrfToken(csrfToken))) {
+      return NextResponse.json(
+        { message: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+
     const metadataList = await readBlogMetadata();
     const filteredMetadata = metadataList.filter((p) => p.id !== id);
     await writeBlogMetadata(filteredMetadata);
@@ -395,11 +512,16 @@ export async function DELETE(
       await writeDeletedBlogPostsFile(deletedIds);
     }
 
+    await Logger.info("Blog post deleted successfully", {
+      userId: session.user.email,
+      postId: id,
+    });
+
     return NextResponse.json({ message: "Post deleted successfully" });
   } catch (error) {
-    console.error("Error deleting post:", error);
+    await Logger.error("Error deleting blog post", error);
     return NextResponse.json(
-      { message: "Error deleting post", error: (error as Error).message },
+      { message: "Error deleting post" },
       { status: 500 }
     );
   }

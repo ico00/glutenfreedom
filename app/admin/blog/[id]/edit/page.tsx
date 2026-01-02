@@ -7,6 +7,7 @@ import { ArrowLeft, Upload, X, Plus } from "lucide-react";
 import { BlogPost } from "@/types";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { DatePicker } from "@/components/DatePicker";
+import { getCsrfToken } from "@/lib/csrfClient";
 
 // Predefinirane kategorije za blog postove
 const BLOG_CATEGORIES = [
@@ -224,9 +225,13 @@ export default function EditBlogPostPage() {
       // Uvijek pošalji galleryCount, čak i ako je 0
       submitData.append("galleryCount", newGalleryFiles.length.toString());
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/blog/${postId}`, {
         method: "PUT",
         body: submitData,
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {

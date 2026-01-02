@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Upload, X, Search, Package, Plus } from "lucide-react";
 import { Product } from "@/types";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import { getCsrfToken } from "@/lib/csrfClient";
 
 // Predefinirane kategorije za recepte
 const RECIPE_CATEGORIES = [
@@ -206,9 +207,13 @@ export default function NoviReceptPage() {
       });
       formDataToSend.append("galleryCount", formData.gallery.length.toString());
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch("/api/recepti", {
         method: "POST",
         body: formDataToSend,
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {

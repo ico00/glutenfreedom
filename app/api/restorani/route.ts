@@ -5,6 +5,8 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { Restaurant } from "@/types";
 import { mockRestaurants } from "@/data/mockData";
+import { protectApiRoute } from "@/lib/apiAuth";
+import { validateImageFile, generateSafeFilename, sanitizeString } from "@/lib/security";
 
 const restaurantsFilePath = path.join(process.cwd(), "data", "restaurants.json");
 const deletedRestaurantsFilePath = path.join(process.cwd(), "data", "deletedRestaurants.json");
@@ -67,8 +69,27 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 5, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const formData = await request.formData();
     const imageFile = formData.get("image") as File | null;
+
+    // Validiraj upload slike ako postoji
+    if (imageFile && imageFile.size > 0) {
+      const validation = await validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { message: validation.error },
+          { status: 400 }
+        );
+      }
+    }
 
     // Parsiraj adrese (može biti array ili single value za backward compatibility)
     const addresses: string[] = [];
@@ -88,11 +109,22 @@ export async function POST(request: Request) {
       }
     }
 
+    // Sanitiziraj i validiraj inpute
+    const name = sanitizeString(formData.get("name") as string, 200);
+    const description = sanitizeString(formData.get("description") as string || "", 1000);
+    
+    if (!name || name.length < 2) {
+      return NextResponse.json(
+        { message: "Naziv mora imati najmanje 2 znaka" },
+        { status: 400 }
+      );
+    }
+
     const cuisineValue = formData.get("cuisine") as string;
     const newRestaurant: Restaurant = {
       id: randomUUID(),
-      name: formData.get("name") as string,
-      description: formData.get("description") as string || "",
+      name,
+      description,
       address: addresses.length === 1 ? addresses[0] : addresses, // Ako je jedna adresa, spremi kao string za backward compatibility
       phone: formData.get("phone") as string || undefined,
       website: formData.get("website") as string || undefined,
@@ -107,10 +139,10 @@ export async function POST(request: Request) {
     if (imageFile && imageFile.size > 0) {
       const uploadDir = path.join(process.cwd(), "public", "images", "restaurants");
       await mkdir(uploadDir, { recursive: true });
-      const filename = `${newRestaurant.id}-${imageFile.name}`;
-      const filePath = path.join(uploadDir, filename);
+      const safeFilename = generateSafeFilename(imageFile.name, newRestaurant.id);
+      const filePath = path.join(uploadDir, safeFilename);
       await writeFile(filePath, Buffer.from(await imageFile.arrayBuffer()));
-      newRestaurant.image = `/images/restaurants/${filename}`;
+      newRestaurant.image = `/images/restaurants/${safeFilename}`;
     }
 
     const currentRestaurants = await readRestaurantsFile();
@@ -121,7 +153,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error adding restaurant:", error);
     return NextResponse.json(
-      { message: "Error adding restaurant", error: (error as Error).message },
+      { message: "Error adding restaurant" },
       { status: 500 }
     );
   }

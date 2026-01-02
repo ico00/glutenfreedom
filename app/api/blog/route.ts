@@ -11,6 +11,12 @@ import {
   getAllBlogPosts,
   calculateReadTime,
 } from "@/lib/blogUtils";
+import { auth } from "@/auth";
+import { validateImageFile, generateSafeFilename, sanitizeHtml, sanitizeString } from "@/lib/security";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { verifyCsrfToken } from "@/lib/csrf";
+import { Logger } from "@/lib/logger";
+import { blogPostSchema, validateData } from "@/lib/validation";
 
 const deletedBlogPostsFilePath = path.join(process.cwd(), "data", "deletedBlogPosts.json");
 
@@ -91,17 +97,128 @@ async function ensureUniquePostId(baseId: string): Promise<string> {
 
 export async function POST(request: Request) {
   try {
+    // Provjeri autentifikaciju
+    const session = await auth();
+    const clientIp = getClientIp(request);
+    
+    if (!session?.user) {
+      await Logger.security("Unauthorized POST attempt to /api/blog", undefined, clientIp);
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    
+    await Logger.info("Blog post creation attempt", {
+      userId: session.user.email,
+      ip: clientIp,
+    });
+
+    // Provjeri rate limit
+    const rateLimit = checkRateLimit(`blog-post-${clientIp}`, 5, 60000); // 5 zahtjeva po minuti
+    if (!rateLimit.allowed) {
+      await Logger.security("Rate limit exceeded for blog POST", session.user.email, clientIp);
+      return NextResponse.json(
+        { message: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
+    // Provjeri CSRF token
+    const csrfToken = request.headers.get("x-csrf-token");
+    if (!csrfToken || !(await verifyCsrfToken(csrfToken))) {
+      await Logger.security("Invalid CSRF token for blog POST", session.user.email, clientIp);
+      return NextResponse.json(
+        { message: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+
     const formData = await request.formData();
     const imageFile = formData.get("image") as File | null;
     const galleryCount = parseInt(formData.get("galleryCount") as string) || 0;
 
+    // Validiraj i sanitiziraj upload slike
+    if (imageFile) {
+      const validation = await validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { message: validation.error },
+          { status: 400 }
+        );
+      }
+    }
+
     // Konvertiraj HTML u Markdown (ili koristi direktno ako je već Markdown)
     let content = formData.get("content") as string;
+    // Sanitiziraj HTML prije konverzije
+    content = sanitizeHtml(content);
     // Ako je HTML, konvertiraj u Markdown (osnovna konverzija)
     content = htmlToMarkdown(content);
 
-    const title = formData.get("title") as string;
+    // Sanitiziraj i validiraj inpute
+    const title = sanitizeString(formData.get("title") as string, 200);
+    const excerpt = sanitizeString(formData.get("excerpt") as string, 500);
     const createdAt = (formData.get("createdAt") as string) || new Date().toISOString().split("T")[0];
+    
+    // Parsiraj kategorije
+    const categoryData = formData.get("category") as string;
+    let category: string | string[];
+    try {
+      category = JSON.parse(categoryData);
+      if (!Array.isArray(category)) {
+        category = categoryData;
+      }
+    } catch {
+      category = categoryData;
+    }
+    
+    // Parsiraj tagove
+    let tags: string[] = [];
+    try {
+      const tagsData = formData.get("tags") as string;
+      if (tagsData) {
+        tags = JSON.parse(tagsData);
+        if (!Array.isArray(tags)) {
+          tags = [];
+        }
+        tags = tags.map(tag => sanitizeString(tag, 50)).filter(Boolean);
+      }
+    } catch {
+      tags = [];
+    }
+    
+    // Validiraj s Zod schemom
+    const validation = validateData(blogPostSchema, {
+      title,
+      excerpt,
+      content: formData.get("content") as string,
+      tags,
+      category,
+      createdAt,
+    });
+    
+    if (!validation.success) {
+      await Logger.warn("Blog post validation failed", {
+        userId: session.user.email,
+        errors: validation.errors?.errors,
+      });
+      return NextResponse.json(
+        { 
+          message: "Validation failed",
+          errors: validation.errors?.errors.map(e => ({
+            path: e.path.join("."),
+            message: e.message,
+          })),
+        },
+        { status: 400 }
+      );
+    }
     
     // Generiraj ID u formatu yymmdd-naslov
     const basePostId = generatePostId(title, createdAt);
@@ -112,40 +229,31 @@ export async function POST(request: Request) {
     // Spremi Markdown sadržaj u zaseban fajl
     await writePostContent(postId, content);
 
-    // Parsiraj kategorije (može biti string ili JSON array)
-    const categoryData = formData.get("category") as string;
-    let category: string | string[];
-    try {
-      category = JSON.parse(categoryData); // Pokušaj parsirati kao JSON array
-      if (!Array.isArray(category)) {
-        category = categoryData; // Ako nije array, koristi kao string (backward compatibility)
-      }
-    } catch {
-      category = categoryData; // Ako parsing ne uspije, koristi kao string
-    }
+
 
     // Kreiraj metadata objekt (bez content polja)
     const metadata: BlogPostMetadata = {
       id: postId,
-      title: formData.get("title") as string,
-      excerpt: formData.get("excerpt") as string,
+      title,
+      excerpt,
       image: "", // Will be updated after image upload
       gallery: [], // Will be updated after gallery upload
-      author: "Ivica Drusany", // Fiksni autor
-      tags: JSON.parse(formData.get("tags") as string),
+      author: session.user.email || "Admin", // Koristi email iz sessiona
+      tags,
       category: category,
       readTime: readTime,
-      createdAt: (formData.get("createdAt") as string) || new Date().toISOString().split("T")[0],
+      createdAt,
     };
 
     // Upload glavne slike
     if (imageFile) {
       const uploadDir = path.join(process.cwd(), "public", "images", "blog");
       await mkdir(uploadDir, { recursive: true });
-      const filename = `${postId}-${imageFile.name}`;
-      const filePath = path.join(uploadDir, filename);
+      // Generiraj siguran filename
+      const safeFilename = generateSafeFilename(imageFile.name, postId);
+      const filePath = path.join(uploadDir, safeFilename);
       await writeFile(filePath, Buffer.from(await imageFile.arrayBuffer()));
-      metadata.image = `/images/blog/${filename}`;
+      metadata.image = `/images/blog/${safeFilename}`;
     }
 
     // Upload galerije slika
@@ -153,12 +261,19 @@ export async function POST(request: Request) {
     for (let i = 0; i < galleryCount; i++) {
       const galleryFile = formData.get(`gallery_${i}`) as File | null;
       if (galleryFile) {
+        // Validiraj galeriju sliku
+        const validation = await validateImageFile(galleryFile);
+        if (!validation.valid) {
+          continue; // Preskoči nevaljanu sliku
+        }
+        
         const uploadDir = path.join(process.cwd(), "public", "images", "blog", "gallery");
         await mkdir(uploadDir, { recursive: true });
-        const filename = `${postId}-gallery-${i}-${galleryFile.name}`;
-        const filePath = path.join(uploadDir, filename);
+        // Generiraj siguran filename
+        const safeFilename = generateSafeFilename(galleryFile.name, `${postId}-gallery-${i}`);
+        const filePath = path.join(uploadDir, safeFilename);
         await writeFile(filePath, Buffer.from(await galleryFile.arrayBuffer()));
-        galleryUrls.push(`/images/blog/gallery/${filename}`);
+        galleryUrls.push(`/images/blog/gallery/${safeFilename}`);
       }
     }
     metadata.gallery = galleryUrls;
@@ -174,11 +289,17 @@ export async function POST(request: Request) {
       content,
     };
 
+    await Logger.info("Blog post created successfully", {
+      userId: session.user.email,
+      postId: postId,
+      title,
+    });
+    
     return NextResponse.json({ message: "Blog post added successfully", post: newPost }, { status: 201 });
   } catch (error) {
-    console.error("Error adding blog post:", error);
+    await Logger.error("Error adding blog post", error);
     return NextResponse.json(
-      { message: "Error adding blog post", error: (error as Error).message },
+      { message: "Error adding blog post" },
       { status: 500 }
     );
   }

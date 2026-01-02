@@ -4,6 +4,8 @@ import { existsSync } from "fs";
 import path from "path";
 import { Store } from "@/types";
 import { mockStores } from "@/data/mockData";
+import { protectApiRoute } from "@/lib/apiAuth";
+import { validateImageFile, generateSafeFilename, sanitizeString } from "@/lib/security";
 
 const storesFilePath = path.join(process.cwd(), "data", "stores.json");
 const deletedStoresFilePath = path.join(process.cwd(), "data", "deletedStores.json");
@@ -81,9 +83,28 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 10, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const { id } = await params;
     const formData = await request.formData();
     const imageFile = formData.get("image") as File | null;
+
+    // Validiraj upload slike ako postoji
+    if (imageFile && imageFile.size > 0) {
+      const validation = await validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { message: validation.error },
+          { status: 400 }
+        );
+      }
+    }
 
     const currentStores = await readStoresFile();
     const storeIndex = currentStores.findIndex((s) => s.id === id);
@@ -101,10 +122,10 @@ export async function PUT(
       // Upload nove slike
       const uploadDir = path.join(process.cwd(), "public", "images", "stores");
       await mkdir(uploadDir, { recursive: true });
-      const filename = `${id}-${imageFile.name}`;
-      const filePath = path.join(uploadDir, filename);
+      const safeFilename = generateSafeFilename(imageFile.name, id);
+      const filePath = path.join(uploadDir, safeFilename);
       await writeFile(filePath, Buffer.from(await imageFile.arrayBuffer()));
-      imageUrl = `/images/stores/${filename}`;
+      imageUrl = `/images/stores/${safeFilename}`;
     } else if (imageRemoved && existingStore.image) {
       // Obriši postojeću sliku
       const imagePath = path.join(process.cwd(), "public", existingStore.image);
@@ -118,13 +139,25 @@ export async function PUT(
       imageUrl = undefined;
     }
 
+    // Sanitiziraj i validiraj inpute
+    const name = sanitizeString(formData.get("name") as string, 200);
+    const description = sanitizeString(formData.get("description") as string || "", 1000);
+    const address = sanitizeString(formData.get("address") as string, 500);
+    
+    if (!name || name.length < 2) {
+      return NextResponse.json(
+        { message: "Naziv mora imati najmanje 2 znaka" },
+        { status: 400 }
+      );
+    }
+
     const updatedStore: Store = {
       ...existingStore,
-      name: formData.get("name") as string,
-      description: formData.get("description") as string || "",
-      address: formData.get("address") as string,
-      phone: formData.get("phone") as string || undefined,
-      website: formData.get("website") as string || undefined,
+      name,
+      description,
+      address,
+      phone: sanitizeString(formData.get("phone") as string || "", 50) || undefined,
+      website: sanitizeString(formData.get("website") as string || "", 500) || undefined,
       type: (formData.get("type") as "dućan" | "online" | "oboje") || "dućan",
       image: imageUrl,
     };
@@ -136,7 +169,7 @@ export async function PUT(
   } catch (error) {
     console.error("Error updating store:", error);
     return NextResponse.json(
-      { message: "Error updating store", error: (error as Error).message },
+      { message: "Error updating store" },
       { status: 500 }
     );
   }
@@ -147,6 +180,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 5, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const { id } = await params;
     const currentStores = await readStoresFile();
     const filteredStores = currentStores.filter((s) => s.id !== id);
@@ -163,7 +204,7 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting store:", error);
     return NextResponse.json(
-      { message: "Error deleting store", error: (error as Error).message },
+      { message: "Error deleting store" },
       { status: 500 }
     );
   }

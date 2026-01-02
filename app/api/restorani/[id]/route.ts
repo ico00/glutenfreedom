@@ -4,6 +4,8 @@ import { existsSync } from "fs";
 import path from "path";
 import { Restaurant } from "@/types";
 import { mockRestaurants } from "@/data/mockData";
+import { protectApiRoute } from "@/lib/apiAuth";
+import { validateImageFile, generateSafeFilename, sanitizeString } from "@/lib/security";
 
 const restaurantsFilePath = path.join(process.cwd(), "data", "restaurants.json");
 const deletedRestaurantsFilePath = path.join(process.cwd(), "data", "deletedRestaurants.json");
@@ -84,6 +86,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 10, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const { id } = await params;
     const formData = await request.formData();
     const dynamicRestaurants = await readRestaurantsFile();
@@ -96,6 +106,17 @@ export async function PUT(
     const existingRestaurant = dynamicRestaurants[restaurantIndex];
     const imageFile = formData.get("image") as File | null;
     const imageRemoved = formData.get("image_removed") === "true";
+
+    // Validiraj upload slike ako postoji
+    if (imageFile && imageFile.size > 0) {
+      const validation = await validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { message: validation.error },
+          { status: 400 }
+        );
+      }
+    }
 
     // Parsiraj adrese (može biti array ili single value za backward compatibility)
     const addresses: string[] = [];
@@ -115,12 +136,22 @@ export async function PUT(
       }
     }
 
-    // Ažuriraj podatke
+    // Ažuriraj podatke i sanitiziraj
+    const name = sanitizeString(formData.get("name") as string, 200);
+    const description = sanitizeString(formData.get("description") as string || "", 1000);
+    
+    if (!name || name.length < 2) {
+      return NextResponse.json(
+        { message: "Naziv mora imati najmanje 2 znaka" },
+        { status: 400 }
+      );
+    }
+
     const cuisineValue = formData.get("cuisine") as string;
     const updatedRestaurant: Restaurant = {
       ...existingRestaurant,
-      name: formData.get("name") as string,
-      description: formData.get("description") as string || "",
+      name,
+      description,
       address: addresses.length === 1 ? addresses[0] : addresses, // Ako je jedna adresa, spremi kao string za backward compatibility
       phone: formData.get("phone") as string || undefined,
       website: formData.get("website") as string || undefined,
@@ -143,10 +174,10 @@ export async function PUT(
       // Upload nove slike
       const uploadDir = path.join(process.cwd(), "public", "images", "restaurants");
       await mkdir(uploadDir, { recursive: true });
-      const filename = `${id}-${imageFile.name}`;
-      const filePath = path.join(uploadDir, filename);
+      const safeFilename = generateSafeFilename(imageFile.name, id);
+      const filePath = path.join(uploadDir, safeFilename);
       await writeFile(filePath, Buffer.from(await imageFile.arrayBuffer()));
-      updatedRestaurant.image = `/images/restaurants/${filename}`;
+      updatedRestaurant.image = `/images/restaurants/${safeFilename}`;
     } else if (imageRemoved) {
       // Obriši sliku ako je eksplicitno uklonjena
       if (existingRestaurant.image && existingRestaurant.image.startsWith("/images/restaurants/")) {
@@ -168,7 +199,7 @@ export async function PUT(
   } catch (error) {
     console.error("Error updating restaurant:", error);
     return NextResponse.json(
-      { message: "Error updating restaurant", error: (error as Error).message },
+      { message: "Error updating restaurant" },
       { status: 500 }
     );
   }
@@ -179,6 +210,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 5, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const { id } = await params;
     const dynamicRestaurants = await readRestaurantsFile();
     const filteredRestaurants = dynamicRestaurants.filter((r) => r.id !== id);
@@ -195,7 +234,7 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting restaurant:", error);
     return NextResponse.json(
-      { message: "Error deleting restaurant", error: (error as Error).message },
+      { message: "Error deleting restaurant" },
       { status: 500 }
     );
   }

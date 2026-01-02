@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Upload, X, Plus } from "lucide-react";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { DatePicker } from "@/components/DatePicker";
+import { getCsrfToken } from "@/lib/csrfClient";
 
 // Predefinirane kategorije za blog postove
 const BLOG_CATEGORIES = [
@@ -163,9 +164,13 @@ export default function NoviBlogPostPage() {
       });
       submitData.append("galleryCount", formData.gallery.length.toString());
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch("/api/blog", {
         method: "POST",
         body: submitData,
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {

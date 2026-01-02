@@ -4,6 +4,8 @@ import { existsSync } from "fs";
 import path from "path";
 import { Product } from "@/types";
 import { mockProducts } from "@/data/mockData";
+import { protectApiRoute } from "@/lib/apiAuth";
+import { validateImageFile, generateSafeFilename, sanitizeString } from "@/lib/security";
 
 const productsFilePath = path.join(process.cwd(), "data", "products.json");
 const deletedProductsFilePath = path.join(process.cwd(), "data", "deletedProducts.json");
@@ -81,6 +83,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 10, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const { id } = await params;
     const formData = await request.formData();
     const allProducts = await getAllProducts();
@@ -91,38 +101,73 @@ export async function PUT(
     }
 
     const existingProduct = allProducts[productIndex];
+    
+    // Validiraj upload slike ako postoji
+    const imageFile = formData.get("image") as File | null;
+    if (imageFile && imageFile.size > 0) {
+      const validation = await validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { message: validation.error },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Sanitiziraj i validiraj inpute
+    const name = sanitizeString((formData.get("name") as string) || existingProduct.name, 200);
+    const description = sanitizeString(formData.get("description") as string || "", 1000);
+    const brand = sanitizeString((formData.get("brand") as string) || existingProduct.brand, 100);
+    const category = sanitizeString((formData.get("category") as string) || existingProduct.category, 100);
+    
+    if (!name || name.length < 2) {
+      return NextResponse.json(
+        { message: "Naziv mora imati najmanje 2 znaka" },
+        { status: 400 }
+      );
+    }
+
     const priceValue = formData.get("price") as string;
     const weightValue = formData.get("weight") as string;
-    // formData.get() uvijek vraća string ako polje postoji u formi (čak i ako je prazan)
-    const descriptionValue = formData.get("description") as string;
-    const storeValue = formData.get("store") as string;
+    const storeValue = sanitizeString(formData.get("store") as string || "", 200);
+
+    // Parsiraj tagove
+    let tags: string[] = existingProduct.tags;
+    try {
+      const tagsData = formData.get("tags") as string;
+      if (tagsData) {
+        tags = JSON.parse(tagsData);
+        if (!Array.isArray(tags)) {
+          tags = existingProduct.tags;
+        } else {
+          tags = tags.map(tag => sanitizeString(tag, 50)).filter(Boolean);
+        }
+      }
+    } catch {
+      tags = existingProduct.tags;
+    }
 
     const updatedProduct: Product = {
       ...existingProduct,
-      name: (formData.get("name") as string) || existingProduct.name,
-      // Koristi poslanu vrijednost (može biti prazan string)
-      description: descriptionValue,
-      brand: (formData.get("brand") as string) || existingProduct.brand,
-      category: (formData.get("category") as string) || existingProduct.category,
-      // Ako je store prazan string, postavi na undefined
+      name,
+      description,
+      brand,
+      category,
       store: storeValue || undefined,
-      tags: formData.get("tags")
-        ? JSON.parse(formData.get("tags") as string)
-        : existingProduct.tags,
+      tags,
       certified: formData.get("certified") === "true",
       price: priceValue ? parseFloat(priceValue) : existingProduct.price,
       weight: weightValue ? parseInt(weightValue) : existingProduct.weight,
     };
 
     // Upload nove slike ako je dodana
-    const imageFile = formData.get("image") as File | null;
     if (imageFile && imageFile.size > 0) {
       const uploadDir = path.join(process.cwd(), "public", "images", "products");
       await mkdir(uploadDir, { recursive: true });
-      const filename = `${updatedProduct.id}-${imageFile.name}`;
-      const filePath = path.join(uploadDir, filename);
+      const safeFilename = generateSafeFilename(imageFile.name, updatedProduct.id);
+      const filePath = path.join(uploadDir, safeFilename);
       await writeFile(filePath, Buffer.from(await imageFile.arrayBuffer()));
-      updatedProduct.image = `/images/products/${filename}`;
+      updatedProduct.image = `/images/products/${safeFilename}`;
     }
 
     const dynamicProducts = await readProductsFile();
@@ -153,7 +198,7 @@ export async function PUT(
   } catch (error) {
     console.error("Error updating product:", error);
     return NextResponse.json(
-      { message: "Error updating product", error: (error as Error).message },
+      { message: "Error updating product" },
       { status: 500 }
     );
   }
@@ -164,6 +209,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 5, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const { id } = await params;
     const dynamicProducts = await readProductsFile();
     const filteredProducts = dynamicProducts.filter((p) => p.id !== id);
@@ -180,7 +233,7 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting product:", error);
     return NextResponse.json(
-      { message: "Error deleting product", error: (error as Error).message },
+      { message: "Error deleting product" },
       { status: 500 }
     );
   }

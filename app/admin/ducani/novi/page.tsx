@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload } from "lucide-react";
+import { getCsrfToken } from "@/lib/csrfClient";
 
 export default function NoviDucanPage() {
   const router = useRouter();
@@ -48,9 +49,13 @@ export default function NoviDucanPage() {
         submitData.append("image", formData.image);
       }
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch("/api/ducani", {
         method: "POST",
         body: submitData,
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {

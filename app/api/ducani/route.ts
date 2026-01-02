@@ -5,6 +5,8 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { Store } from "@/types";
 import { mockStores } from "@/data/mockData";
+import { protectApiRoute } from "@/lib/apiAuth";
+import { validateImageFile, generateSafeFilename, sanitizeString } from "@/lib/security";
 
 const storesFilePath = path.join(process.cwd(), "data", "stores.json");
 const deletedStoresFilePath = path.join(process.cwd(), "data", "deletedStores.json");
@@ -67,16 +69,47 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 5, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const formData = await request.formData();
     const imageFile = formData.get("image") as File | null;
 
+    // Validiraj upload slike ako postoji
+    if (imageFile && imageFile.size > 0) {
+      const validation = await validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { message: validation.error },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Sanitiziraj i validiraj inpute
+    const name = sanitizeString(formData.get("name") as string, 200);
+    const description = sanitizeString(formData.get("description") as string || "", 1000);
+    const address = sanitizeString(formData.get("address") as string, 500);
+    
+    if (!name || name.length < 2) {
+      return NextResponse.json(
+        { message: "Naziv mora imati najmanje 2 znaka" },
+        { status: 400 }
+      );
+    }
+
     const newStore: Store = {
       id: randomUUID(),
-      name: formData.get("name") as string,
-      description: formData.get("description") as string || "",
-      address: formData.get("address") as string,
-      phone: formData.get("phone") as string || undefined,
-      website: formData.get("website") as string || undefined,
+      name,
+      description,
+      address,
+      phone: sanitizeString(formData.get("phone") as string || "", 50) || undefined,
+      website: sanitizeString(formData.get("website") as string || "", 500) || undefined,
       type: (formData.get("type") as "dućan" | "online" | "oboje") || "dućan",
       image: undefined,
     };
@@ -85,10 +118,10 @@ export async function POST(request: Request) {
     if (imageFile && imageFile.size > 0) {
       const uploadDir = path.join(process.cwd(), "public", "images", "stores");
       await mkdir(uploadDir, { recursive: true });
-      const filename = `${newStore.id}-${imageFile.name}`;
-      const filePath = path.join(uploadDir, filename);
+      const safeFilename = generateSafeFilename(imageFile.name, newStore.id);
+      const filePath = path.join(uploadDir, safeFilename);
       await writeFile(filePath, Buffer.from(await imageFile.arrayBuffer()));
-      newStore.image = `/images/stores/${filename}`;
+      newStore.image = `/images/stores/${safeFilename}`;
     }
 
     // Spremi u JSON fajl
@@ -100,7 +133,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error adding store:", error);
     return NextResponse.json(
-      { message: "Error adding store", error: (error as Error).message },
+      { message: "Error adding store" },
       { status: 500 }
     );
   }

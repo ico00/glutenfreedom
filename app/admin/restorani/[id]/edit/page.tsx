@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload, X, Plus } from "lucide-react";
+import { getCsrfToken } from "@/lib/csrfClient";
 import { Restaurant } from "@/types";
 
 export default function EditRestoranPage() {
@@ -133,9 +134,13 @@ export default function EditRestoranPage() {
         submitData.append("image_removed", "true");
       }
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/restorani/${restaurantId}`, {
         method: "PUT",
         body: submitData,
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {

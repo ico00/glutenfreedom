@@ -10,14 +10,31 @@ import {
   writeRecipeContent,
   getAllRecipes,
 } from "@/lib/recipeUtils";
+import { protectApiRoute } from "@/lib/apiAuth";
+import { validateImageFile, generateSafeFilename, sanitizeString } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   try {
+    // Provjeri autentifikaciju, rate limit i CSRF
+    const authError = await protectApiRoute(request, {
+      rateLimit: { maxRequests: 5, windowMs: 60000 },
+    });
+    if (authError) {
+      return authError;
+    }
+
     const formData = await request.formData();
 
-    // Parsiraj form data
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
+    // Parsiraj i sanitiziraj form data
+    const title = sanitizeString(formData.get("title") as string, 200);
+    const description = sanitizeString(formData.get("description") as string, 1000);
+    
+    if (!title || title.length < 3) {
+      return NextResponse.json(
+        { success: false, message: "Naslov mora imati najmanje 3 znaka" },
+        { status: 400 }
+      );
+    }
     const prepTime = parseInt(formData.get("prepTime") as string);
     const cookTime = parseInt(formData.get("cookTime") as string);
     const servings = parseInt(formData.get("servings") as string);
@@ -53,13 +70,21 @@ export async function POST(request: NextRequest) {
     let imagePath = "";
 
     if (imageFile && imageFile.size > 0) {
+      // Validiraj upload slike
+      const validation = await validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { success: false, message: validation.error },
+          { status: 400 }
+        );
+      }
+
       const bytes = await imageFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      // Generiraj jedinstveni naziv datoteke
-      const fileExtension = path.extname(imageFile.name);
-      const fileName = `${randomUUID()}${fileExtension}`;
-      const uploadPath = path.join(process.cwd(), "public", "images", "recipes", fileName);
+      // Generiraj siguran naziv datoteke
+      const safeFileName = generateSafeFilename(imageFile.name, randomUUID());
+      const uploadPath = path.join(process.cwd(), "public", "images", "recipes", safeFileName);
 
       // Osiguraj da folder postoji
       const uploadDir = path.dirname(uploadPath);
@@ -69,7 +94,7 @@ export async function POST(request: NextRequest) {
 
       // Spremi sliku
       await writeFile(uploadPath, buffer);
-      imagePath = `/images/recipes/${fileName}`;
+      imagePath = `/images/recipes/${safeFileName}`;
     }
 
     // Upload galerije slika
@@ -79,13 +104,18 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < galleryCount; i++) {
       const galleryFile = formData.get(`gallery_${i}`) as File | null;
       if (galleryFile && galleryFile.size > 0) {
+        // Validiraj galeriju sliku
+        const validation = await validateImageFile(galleryFile);
+        if (!validation.valid) {
+          continue; // Preskoči nevaljanu sliku
+        }
+
         const bytes = await galleryFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Generiraj jedinstveni naziv datoteke
-        const fileExtension = path.extname(galleryFile.name);
-        const fileName = `${randomUUID()}${fileExtension}`;
-        const uploadPath = path.join(process.cwd(), "public", "images", "recipes", "gallery", fileName);
+        // Generiraj siguran naziv datoteke
+        const safeFileName = generateSafeFilename(galleryFile.name, `${randomUUID()}-gallery-${i}`);
+        const uploadPath = path.join(process.cwd(), "public", "images", "recipes", "gallery", safeFileName);
 
         // Osiguraj da folder postoji
         const uploadDir = path.dirname(uploadPath);
@@ -95,7 +125,7 @@ export async function POST(request: NextRequest) {
 
         // Spremi sliku
         await writeFile(uploadPath, buffer);
-        galleryPaths.push(`/images/recipes/gallery/${fileName}`);
+        galleryPaths.push(`/images/recipes/gallery/${safeFileName}`);
       }
     }
 

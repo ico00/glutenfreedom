@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload, X, Plus } from "lucide-react";
+import { getCsrfToken } from "@/lib/csrfClient";
 
 export default function NoviRestoranPage() {
   const router = useRouter();
@@ -77,9 +78,13 @@ export default function NoviRestoranPage() {
         submitData.append("image", formData.image);
       }
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch("/api/restorani", {
         method: "POST",
         body: submitData,
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {

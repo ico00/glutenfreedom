@@ -7,23 +7,30 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "migrate-blog-ids": "tsx scripts/migrate-blog-ids.ts"
+    "migrate-blog-ids": "tsx scripts/migrate-blog-ids.ts",
+    "backup": "tsx scripts/auto-backup.ts"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
     "@types/react-syntax-highlighter": "^15.5.13",
     "framer-motion": "^11.0.0",
+    "isomorphic-dompurify": "^2.11.0",
     "lucide-react": "^0.344.0",
     "marked": "^17.0.1",
     "next": "^14.2.0",
+    "bcryptjs": "^2.4.3",
+    "next-auth": "^5.0.0-beta.25",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
+    "file-type": "^19.0.0",
     "react-markdown": "^10.1.0",
-    "react-syntax-highlighter": "^16.1.0"
+    "react-syntax-highlighter": "^16.1.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.0",
     "eslint": "^8.57.0",

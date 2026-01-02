@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { BlogPost, Product, Restaurant, Recipe, Store } from "@/types";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import { getCsrfToken } from "@/lib/csrfClient";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -149,8 +150,12 @@ export default function AdminPage() {
     }
 
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/blog/${id}`, {
         method: "DELETE",
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {
@@ -170,9 +175,13 @@ export default function AdminPage() {
     }
 
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/proizvodi/${id}`, {
         method: "DELETE",
         cache: 'no-store',
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {
@@ -193,9 +202,13 @@ export default function AdminPage() {
     }
 
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/restorani/${id}`, {
         method: "DELETE",
         cache: 'no-store',
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {
@@ -216,9 +229,13 @@ export default function AdminPage() {
     }
 
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/recepti/${id}`, {
         method: "DELETE",
         cache: 'no-store',
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {
@@ -239,9 +256,13 @@ export default function AdminPage() {
     }
 
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`/api/ducani/${id}`, {
         method: "DELETE",
         cache: 'no-store',
+        headers: {
+          "x-csrf-token": csrfToken || "",
+        },
       });
 
       if (response.ok) {
