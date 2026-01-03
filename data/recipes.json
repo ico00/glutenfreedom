@@ -35,5 +35,21 @@
     ],
     "category": "Deserti",
     "createdAt": "2026-01-01"
+  },
+  {
+    "id": "041b31c1-8f9e-48d4-a546-9cab0a4a0ef2",
+    "title": "Palačinke",
+    "description": "Iako su palačinke nešto kao najjednostavnije i svi misle da ih znaju napraviti ipak postoji puno nijansi. Meni su ovo omiljene, nek se nitko ne uvrijedi.",
+    "image": "",
+    "prepTime": 10,
+    "cookTime": 30,
+    "servings": 10,
+    "difficulty": "lako",
+    "tags": [
+      "palačinke",
+      "desert"
+    ],
+    "category": "Deserti",
+    "createdAt": "2026-01-03"
   }
 ]

@@ -8,19 +8,7 @@ import { BlogPost } from "@/types";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { DatePicker } from "@/components/DatePicker";
 import { getCsrfToken } from "@/lib/csrfClient";
-
-// Predefinirane kategorije za blog postove
-const BLOG_CATEGORIES = [
-  "Iskustva",
-  "Savjeti",
-  "Vijesti",
-  "Recepti",
-  "Zdravlje",
-  "Dijagnoza",
-  "Proizvodi",
-  "Restorani",
-  "Ostalo"
-];
+import { BLOG_CATEGORIES, COMMON_TAGS } from "@/lib/constants";
 
 export default function EditBlogPostPage() {
   const router = useRouter();
@@ -122,7 +110,9 @@ export default function EditBlogPostPage() {
             }
           });
           const uniqueTags = Array.from(tagMap.values()).sort();
-          setExistingTags(uniqueTags);
+          // Kombiniraj postojeće tagove s predefiniranim tagovima
+          const allSuggestedTags = Array.from(new Set([...COMMON_TAGS, ...uniqueTags])).sort();
+          setExistingTags(allSuggestedTags);
         }
       } catch (error) {
         console.error("Error loading existing tags:", error);

@@ -153,7 +153,7 @@ export default function ProizvodiPage() {
                   {product.price && (
                     <p className="mt-4 text-lg font-semibold text-gf-cta dark:text-gf-cta">
                       {product.price} €
-                      {product.weight && ` / ${product.weight}g`}
+                      {product.weight && ` / ${product.weight}${product.weightUnit || "g"}`}
                     </p>
                   )}
                 </div>

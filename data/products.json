@@ -63,5 +63,22 @@
     "price": 29,
     "weight": 1000,
     "image": "/images/products/661580d7-9bed-4aa4-81ea-e9b1c314a8d0-Zimska-salama-300g-560x784px.png"
+  },
+  {
+    "id": "29080029-9387-4811-a774-4a4eb471d14d",
+    "name": "Z bregov Mlijeko bez laktoze 2,8% m.m.",
+    "description": "",
+    "brand": "Vindija",
+    "category": "pića",
+    "store": "Konzum",
+    "tags": [
+      "mlijeko",
+      "bez laktoze"
+    ],
+    "certified": false,
+    "price": 1.59,
+    "weight": 1000,
+    "image": "/images/products/29080029-9387-4811-a774-4a4eb471d14d-1767445041836-fl5f4p7-357327d81e7592a6661fbca6215a61db162ccd438802a608d05fb668bf373162-3.png",
+    "weightUnit": "ml"
   }
 ]

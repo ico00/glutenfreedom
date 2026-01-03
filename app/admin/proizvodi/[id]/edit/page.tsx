@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Upload } from "lucide-react";
 import { Product } from "@/types";
 import { getCsrfToken } from "@/lib/csrfClient";
+import { BRANDS, STORES, PRODUCT_CATEGORIES } from "@/lib/constants";
 
 export default function EditProizvodPage() {
   const router = useRouter();
@@ -24,44 +25,13 @@ export default function EditProizvodPage() {
     certified: false,
     price: "",
     weight: "",
+    weightUnit: "g" as "g" | "ml",
     image: null as File | null,
   });
 
-  const brands = [
-    "Schär",
-    "Barilla",
-    "Gavrilović",
-    "Dr. Schär",
-    "No Gluten No Problem",
-    "Vitaminka",
-    "Alnavit",
-    "Ostalo",
-  ];
-
-  const categories = [
-    "brašno",
-    "tjestenine",
-    "pekara",
-    "slatkiši",
-    "snack",
-    "pića",
-    "konzerve",
-    "začini",
-    "ostalo",
-  ];
-
-  const stores = [
-    "Garden",
-    "Bio Planet",
-    "Konzum",
-    "Spar",
-    "Lidl",
-    "Kaufland",
-    "Plodine",
-    "DM",
-    "Online",
-    "Ostalo",
-  ];
+  const brands = [...BRANDS];
+  const stores = [...STORES];
+  const categories = [...PRODUCT_CATEGORIES];
 
   useEffect(() => {
     async function loadProduct() {
@@ -81,6 +51,7 @@ export default function EditProizvodPage() {
             certified: product.certified,
             price: product.price?.toString() || "",
             weight: product.weight?.toString() || "",
+            weightUnit: product.weightUnit || "g",
             image: null,
           });
           setImagePreview(product.image || null);
@@ -124,6 +95,7 @@ export default function EditProizvodPage() {
       submitData.append("certified", formData.certified.toString());
       submitData.append("price", formData.price || "");
       submitData.append("weight", formData.weight || "");
+      submitData.append("weightUnit", formData.weightUnit);
 
       if (formData.image) {
         submitData.append("image", formData.image);
@@ -289,17 +261,28 @@ export default function EditProizvodPage() {
             </div>
             <div>
               <label htmlFor="weight" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-                Težina (g)
+                Težina / Volumen
               </label>
-              <input
-                type="number"
-                id="weight"
-                min="0"
-                value={formData.weight}
-                onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                placeholder="0"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  id="weight"
+                  min="0"
+                  value={formData.weight}
+                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                  className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  placeholder="0"
+                />
+                <select
+                  id="weightUnit"
+                  value={formData.weightUnit}
+                  onChange={(e) => setFormData({ ...formData, weightUnit: e.target.value as "g" | "ml" })}
+                  className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                >
+                  <option value="g">g</option>
+                  <option value="ml">ml</option>
+                </select>
+              </div>
             </div>
           </div>
 

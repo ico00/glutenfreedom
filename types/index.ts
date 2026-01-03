@@ -102,6 +102,7 @@ export interface Product {
   tags: string[];
   certified: boolean;
   price?: number;
-  weight?: number; // u gramima
+  weight?: number;
+  weightUnit?: "g" | "ml"; // jedinica mjere
 }
 

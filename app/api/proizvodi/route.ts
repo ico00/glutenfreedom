@@ -106,6 +106,7 @@ export async function POST(request: Request) {
 
     const priceValue = formData.get("price") as string;
     const weightValue = formData.get("weight") as string;
+    const weightUnit = formData.get("weightUnit") as "g" | "ml" | null;
 
     // Parsiraj tagove
     let tags: string[] = [];
@@ -133,6 +134,7 @@ export async function POST(request: Request) {
       certified: formData.get("certified") === "true",
       price: priceValue ? parseFloat(priceValue) : undefined,
       weight: weightValue ? parseInt(weightValue) : undefined,
+      weightUnit: weightUnit === "g" || weightUnit === "ml" ? weightUnit : undefined,
       image: undefined,
     };
 

@@ -19,7 +19,11 @@ export function FeaturedRecipes() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setRecipes(data.slice(0, 3));
+          // Sortiraj po datumu (najnoviji prvi) i uzmi prva 3
+          const sortedRecipes = data.sort((a: Recipe, b: Recipe) => {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+          setRecipes(sortedRecipes.slice(0, 3));
         }
       })
       .catch((error) => {

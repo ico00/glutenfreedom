@@ -129,6 +129,7 @@ export async function PUT(
 
     const priceValue = formData.get("price") as string;
     const weightValue = formData.get("weight") as string;
+    const weightUnit = formData.get("weightUnit") as "g" | "ml" | null;
     const storeValue = sanitizeString(formData.get("store") as string || "", 200);
 
     // Parsiraj tagove
@@ -158,6 +159,7 @@ export async function PUT(
       certified: formData.get("certified") === "true",
       price: priceValue ? parseFloat(priceValue) : existingProduct.price,
       weight: weightValue ? parseInt(weightValue) : existingProduct.weight,
+      weightUnit: weightUnit === "g" || weightUnit === "ml" ? weightUnit : existingProduct.weightUnit,
     };
 
     // Upload nove slike ako je dodana

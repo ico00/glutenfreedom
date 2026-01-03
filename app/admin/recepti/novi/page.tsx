@@ -7,22 +7,7 @@ import { ArrowLeft, Upload, X, Search, Package, Plus } from "lucide-react";
 import { Product } from "@/types";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { getCsrfToken } from "@/lib/csrfClient";
-
-// Predefinirane kategorije za recepte
-const RECIPE_CATEGORIES = [
-  "Pekara",
-  "Deserti",
-  "Glavna jela",
-  "Predjela",
-  "Salate",
-  "Pizze",
-  "Torte i kolači",
-  "Brza hrana",
-  "Domaća jela",
-  "Zimnica",
-  "Napitci",
-  "Ostalo"
-];
+import { RECIPE_CATEGORIES } from "@/lib/constants";
 
 export default function NoviReceptPage() {
   const router = useRouter();
@@ -101,7 +86,7 @@ export default function NoviReceptPage() {
     const newIngredients = [...formData.ingredients];
     newIngredients[index] = value;
     setFormData({ ...formData, ingredients: newIngredients });
-    setShowProductSearch(null);
+    // Ne zatvaraj dropdown automatski - korisnik može nastaviti tipkati ili koristiti pretragu
   };
 
   // Učitaj proizvode
@@ -491,10 +476,25 @@ export default function NoviReceptPage() {
                         required
                         value={ingredient}
                         onChange={(e) => handleIngredientChange(index, e.target.value)}
-                        onFocus={() => setShowProductSearch(index)}
-                        placeholder={`Sastojak ${index + 1}`}
-                        className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                        placeholder={`Sastojak ${index + 1} (možeš upisati ručno ili odabrati iz baze)`}
+                        className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 pr-12 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (showProductSearch === index) {
+                            setShowProductSearch(null);
+                            setProductSearchQuery("");
+                          } else {
+                            setShowProductSearch(index);
+                            setProductSearchQuery("");
+                          }
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gf-text-secondary hover:bg-gf-bg-soft hover:text-gf-cta dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-gf-cta"
+                        title="Pretraži proizvode iz baze"
+                      >
+                        <Package className="h-5 w-5" />
+                      </button>
                       {showProductSearch === index && (
                         <div className="product-search-dropdown absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
                           <div className="border-b border-neutral-200 p-2 dark:border-neutral-700">
@@ -575,6 +575,7 @@ export default function NoviReceptPage() {
                         type="button"
                         onClick={() => handleRemoveIngredient(index)}
                         className="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+                        title="Ukloni sastojak"
                       >
                         <X className="h-4 w-4" />
                       </button>
