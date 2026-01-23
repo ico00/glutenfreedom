@@ -2,8 +2,8 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Gluten Freedom",
-    short_name: "Gluten Freedom",
+    name: "Bezglutenska sila",
+    short_name: "Bezglutenska sila",
     description: "Web aplikacija i informativna platforma vezana uz celijakiju, gluten free recepte, savjete, restorane i proizvode bez glutena.",
     start_url: "/",
     display: "standalone",

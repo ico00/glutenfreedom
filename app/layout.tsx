@@ -12,14 +12,14 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Gluten Freedom - Celijakija, Recepti i Savjeti",
-    template: "%s | Gluten Freedom",
+    default: "Bezglutenska sila - Celijakija, Recepti i Savjeti",
+    template: "%s | Bezglutenska sila",
   },
   description: "Web aplikacija i informativna platforma vezana uz celijakiju, gluten free recepte, savjete, restorane i proizvode bez glutena.",
   keywords: ["celijakija", "gluten free", "recepti", "restorani", "Zagreb", "bez glutena", "gluten free recepti"],
-  authors: [{ name: "Gluten Freedom" }],
-  creator: "Gluten Freedom",
-  publisher: "Gluten Freedom",
+  authors: [{ name: "Bezglutenska sila" }],
+  creator: "Bezglutenska sila",
+  publisher: "Bezglutenska sila",
   formatDetection: {
     email: false,
     address: false,
@@ -33,13 +33,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "hr_HR",
     url: "/",
-    siteName: "Gluten Freedom",
-    title: "Gluten Freedom - Celijakija, Recepti i Savjeti",
+    siteName: "Bezglutenska sila",
+    title: "Bezglutenska sila - Celijakija, Recepti i Savjeti",
     description: "Web aplikacija i informativna platforma vezana uz celijakiju, gluten free recepte, savjete, restorane i proizvode bez glutena.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Gluten Freedom - Celijakija, Recepti i Savjeti",
+    title: "Bezglutenska sila - Celijakija, Recepti i Savjeti",
     description: "Web aplikacija i informativna platforma vezana uz celijakiju, gluten free recepte, savjete, restorane i proizvode bez glutena.",
   },
   robots: {

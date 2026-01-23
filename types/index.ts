@@ -10,7 +10,6 @@ export interface Recipe {
   difficulty: "lako" | "srednje" | "teško";
   ingredients: string[]; // Učitava se iz Markdown fajla
   instructions: string[]; // Učitava se iz Markdown fajla
-  tags: string[];
   category: string;
   createdAt: string;
 }
@@ -26,7 +25,6 @@ export interface RecipeMetadata {
   cookTime: number;
   servings: number;
   difficulty: "lako" | "srednje" | "teško";
-  tags: string[];
   category: string;
   createdAt: string;
 }

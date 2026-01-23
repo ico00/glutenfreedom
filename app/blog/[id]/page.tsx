@@ -2,11 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import Script from "next/script";
-import { mockBlogPosts } from "@/data/mockData";
 import { Clock, ArrowLeft } from "lucide-react";
-import { Disclaimer } from "@/components/Disclaimer";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
-import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { HtmlRenderer } from "@/components/HtmlRenderer";
 import { GallerySection } from "@/components/GallerySection";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { generateBlogPostMetadata } from "@/lib/metadata";
@@ -58,15 +56,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
     notFound();
   }
 
-  // Helper funkcija za dohvaćanje tagova kao array
-  const getPostTags = (post: any): string[] => {
-    if (Array.isArray(post.tags)) {
-      return post.tags;
-    }
-    return post.tags ? [post.tags] : [];
-  };
-
-  const postTags = getPostTags(post);
   const blogPostingSchema = generateBlogPostingSchema(post as BlogPost);
 
   return (
@@ -115,17 +104,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
             {post.title}
           </h1>
 
-          <div className="mb-8 flex flex-wrap gap-2">
-            {postTags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-gf-safe/20 px-3 py-1 text-sm font-medium text-gf-safe dark:bg-gf-safe/30 dark:text-gf-safe"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
           {/* Kratki opis - istaknut */}
           <div className="mb-8 rounded-lg border-l-4 border-gf-cta bg-gf-bg-soft/50 px-6 py-4 dark:bg-neutral-800/50">
             <p className="text-xl font-semibold leading-relaxed text-gf-text-primary dark:text-neutral-100">
@@ -133,20 +111,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
             </p>
           </div>
 
-          <div className="prose prose-lg max-w-none dark:prose-invert">
-            <div className="text-gf-text-primary dark:text-neutral-300">
-              <MarkdownRenderer content={post.content} />
-            </div>
+          <div className="text-gf-text-primary dark:text-neutral-300">
+            <HtmlRenderer content={post.content} />
           </div>
 
           {/* Galerija slika */}
           {post.gallery && post.gallery.length > 0 && (
             <GallerySection images={post.gallery} />
           )}
-
-          <div className="mt-12">
-            <Disclaimer />
-          </div>
         </article>
       </div>
     </div>

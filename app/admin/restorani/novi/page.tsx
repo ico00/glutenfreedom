@@ -19,7 +19,6 @@ export default function NoviRestoranPage() {
     facebook: "",
     instagram: "",
     tiktok: "",
-    cuisine: "",
     image: null as File | null,
   });
 
@@ -72,7 +71,7 @@ export default function NoviRestoranPage() {
       submitData.append("facebook", formData.facebook);
       submitData.append("instagram", formData.instagram);
       submitData.append("tiktok", formData.tiktok);
-      submitData.append("cuisine", formData.cuisine || "");
+      submitData.append("cuisine", ""); // Prazan string za backward compatibility
 
       if (formData.image) {
         submitData.append("image", formData.image);
@@ -257,37 +256,6 @@ export default function NoviRestoranPage() {
                 className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
               />
             </div>
-          </div>
-
-          {/* Kuhinja */}
-          <div>
-            <label htmlFor="cuisine" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Kuhinja
-            </label>
-            <select
-              id="cuisine"
-              value={formData.cuisine}
-              onChange={(e) => setFormData({ ...formData, cuisine: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            >
-              <option value="">Odaberi kuhinju</option>
-              <option value="mediteranska">Mediteranska</option>
-              <option value="vegetarijanska">Vegetarijanska</option>
-              <option value="organička">Organička</option>
-              <option value="zdrava">Zdrava</option>
-              <option value="tradicionalna">Tradicionalna</option>
-              <option value="obiteljska">Obiteljska</option>
-              <option value="talijanska">Talijanska</option>
-              <option value="azijska">Azijska</option>
-              <option value="meksička">Meksička</option>
-              <option value="američka">Američka</option>
-              <option value="francuska">Francuska</option>
-              <option value="hrvatska">Hrvatska</option>
-              <option value="balkanska">Balkanska</option>
-              <option value="vegan">Vegan</option>
-              <option value="riblja">Riblja</option>
-              <option value="mesna">Mesna</option>
-            </select>
           </div>
 
           {/* Slika */}

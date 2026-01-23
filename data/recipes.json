@@ -2,17 +2,12 @@
   {
     "id": "e3344caf-284c-4adc-b242-54a029c38018",
     "title": "Tapioka muffini",
-    "description": "Tapioka muffini ",
+    "description": "Tapioka muffini",
     "image": "/images/recipes/e3344caf-284c-4adc-b242-54a029c38018-1767383138930.jpg",
     "prepTime": 5,
     "cookTime": 30,
     "servings": 10,
     "difficulty": "lako",
-    "tags": [
-      "pecivo",
-      "kruh",
-      "muffin"
-    ],
     "category": "Pekara",
     "createdAt": "2026-01-01",
     "gallery": [
@@ -29,10 +24,6 @@
     "cookTime": 15,
     "servings": 20,
     "difficulty": "lako",
-    "tags": [
-      "fritule",
-      "božić"
-    ],
     "category": "Deserti",
     "createdAt": "2026-01-01"
   },
@@ -40,15 +31,11 @@
     "id": "041b31c1-8f9e-48d4-a546-9cab0a4a0ef2",
     "title": "Palačinke",
     "description": "Iako su palačinke nešto kao najjednostavnije i svi misle da ih znaju napraviti ipak postoji puno nijansi. Meni su ovo omiljene, nek se nitko ne uvrijedi.",
-    "image": "",
+    "image": "/images/recipes/041b31c1-8f9e-48d4-a546-9cab0a4a0ef2-1768396917238-eb7ixq4-IMG_3540.jpg",
     "prepTime": 10,
     "cookTime": 30,
     "servings": 10,
     "difficulty": "lako",
-    "tags": [
-      "palačinke",
-      "desert"
-    ],
     "category": "Deserti",
     "createdAt": "2026-01-03"
   }

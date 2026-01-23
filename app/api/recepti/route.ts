@@ -40,8 +40,6 @@ export async function POST(request: NextRequest) {
     const servings = parseInt(formData.get("servings") as string);
     const difficulty = formData.get("difficulty") as "lako" | "srednje" | "teško";
     const category = formData.get("category") as string;
-    const tagsString = formData.get("tags") as string;
-    const tags = tagsString.split(",").map((tag) => tag.trim()).filter(Boolean);
 
     // Parsiraj sastojke
     const ingredients: string[] = [];
@@ -142,7 +140,6 @@ export async function POST(request: NextRequest) {
       cookTime,
       servings,
       difficulty,
-      tags,
       category,
       createdAt: new Date().toISOString().split("T")[0],
     };

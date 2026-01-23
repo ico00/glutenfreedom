@@ -1,18 +1,34 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { mockBlogPosts } from "@/data/mockData";
-import { Clock, Search, BookOpen, Calendar } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Clock, Search, BookOpen, Calendar, ChevronDown, Check, Heart, Lightbulb, Newspaper, ChefHat, Activity, Stethoscope, ShoppingBag, UtensilsCrossed, MoreHorizontal } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { BlogPost } from "@/types";
+import { BLOG_CATEGORIES } from "@/lib/constants";
+
+// Mapiranje kategorija na ikone
+const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  "sve": BookOpen,
+  "Iskustva": Heart,
+  "Savjeti": Lightbulb,
+  "Vijesti": Newspaper,
+  "Recepti": ChefHat,
+  "Zdravlje": Activity,
+  "Dijagnoza": Stethoscope,
+  "Proizvodi": ShoppingBag,
+  "Restorani": UtensilsCrossed,
+  "Ostalo": MoreHorizontal,
+};
 
 export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("sve");
-  const [allPosts, setAllPosts] = useState<BlogPost[]>(mockBlogPosts);
+  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadPosts() {
@@ -33,30 +49,45 @@ export default function BlogPage() {
     loadPosts();
   }, []);
 
-  // Helper funkcija za dohvaćanje tagova kao array
-  const getPostTags = (post: BlogPost): string[] => {
-    if (Array.isArray(post.tags)) {
-      return post.tags;
-    }
-    return post.tags ? [post.tags] : [];
-  };
+  // Zatvori dropdown kada se klikne izvan ili pritisne Escape
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
 
-  // Ekstraktuj sve kategorije iz postova (podržava i string i array)
-  const allCategories = allPosts.flatMap((post) => {
-    if (Array.isArray(post.category)) {
-      return post.category;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isCategoryOpen) {
+        setIsCategoryOpen(false);
+      }
+    };
+
+    if (isCategoryOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keydown", handleEscape);
+      };
     }
-    return post.category ? [post.category] : [];
-  });
-  const categories = ["sve", ...Array.from(new Set(allCategories))];
+  }, [isCategoryOpen]);
+
+  // Kategorije za filter – koristi statički definirane BLOG_CATEGORIES
+  const categories = ["sve", ...BLOG_CATEGORIES];
+  
+  const selectedCategoryLabel = selectedCategory === "sve" ? "Sve kategorije" : selectedCategory;
+  const SelectedIcon = categoryIcons[selectedCategory] || BookOpen;
 
   const filteredPosts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
     const filtered = allPosts.filter((post) => {
-      const postTags = getPostTags(post);
       const matchesSearch =
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        postTags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        !query ||
+        post.title.toLowerCase().includes(query) ||
+        post.excerpt.toLowerCase().includes(query) ||
+        (post.content && post.content.toLowerCase().includes(query));
 
       // Provjeri da li post ima odabranu kategoriju (podržava i string i array)
       const postCategories = Array.isArray(post.category) 
@@ -111,21 +142,73 @@ export default function BlogPage() {
               className="w-full rounded-lg border border-neutral-300 bg-gf-bg-card py-3 pl-10 pr-4 text-gf-text-primary placeholder-gf-text-muted focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-400"
             />
           </div>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-lg border border-neutral-300 bg-gf-bg-card px-4 py-2 text-sm text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-          >
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              </option>
-            ))}
-          </select>
+          
+          {/* Custom Category Dropdown */}
+          <div ref={categoryRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+              className="flex w-full items-center justify-between rounded-lg border border-neutral-300 bg-gf-bg-card px-4 py-3 text-sm font-medium text-gf-text-primary transition-all hover:border-gf-cta hover:bg-gf-bg-soft focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
+            >
+              <div className="flex items-center gap-2">
+                <SelectedIcon className="h-4 w-4 text-gf-cta" />
+                <span>{selectedCategoryLabel}</span>
+              </div>
+              <ChevronDown 
+                className={`h-4 w-4 text-gf-text-muted transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} 
+              />
+            </button>
+
+            <AnimatePresence>
+              {isCategoryOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800"
+                >
+                  {categories.map((category) => {
+                    const Icon = categoryIcons[category] || BookOpen;
+                    const isSelected = selectedCategory === category;
+                    const label = category === "sve" ? "Sve kategorije" : category;
+                    
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(category);
+                          setIsCategoryOpen(false);
+                        }}
+                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors ${
+                          isSelected
+                            ? "bg-gf-cta/10 text-gf-cta dark:bg-gf-cta/20"
+                            : "text-gf-text-primary hover:bg-gf-bg-soft dark:text-neutral-300 dark:hover:bg-neutral-700"
+                        }`}
+                      >
+                        <Icon className={`h-4 w-4 ${isSelected ? 'text-gf-cta' : 'text-gf-text-muted'}`} />
+                        <span className="flex-1">{label}</span>
+                        {isSelected && (
+                          <Check className="h-4 w-4 text-gf-cta" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
-        {/* Posts Grid */}
-        {filteredPosts.length > 0 ? (
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="py-12 text-center">
+            <p className="text-lg text-gf-text-secondary dark:text-neutral-400">
+              Učitavanje članaka...
+            </p>
+          </div>
+        ) : filteredPosts.length > 0 ? (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {filteredPosts.map((post, index) => (
               <motion.article
@@ -173,20 +256,6 @@ export default function BlogPage() {
                     <p className="mb-4 line-clamp-2 text-gf-text-secondary dark:text-neutral-400">
                       {post.excerpt}
                     </p>
-                    <div className="mb-4 flex flex-wrap gap-2">
-                      {getPostTags(post).map((tag, tagIndex) => (
-                        <motion.span
-                          key={tag}
-                          initial={{ opacity: 0, scale: 0 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: index * 0.1 + tagIndex * 0.1 + 0.3 }}
-                          whileHover={{ scale: 1.1 }}
-                          className="cursor-default rounded-full bg-gf-safe/20 px-3 py-1 text-xs font-medium text-gf-safe transition-colors hover:bg-gf-safe/30 dark:bg-gf-safe/30 dark:text-gf-safe"
-                        >
-                          {tag}
-                        </motion.span>
-                      ))}
-                    </div>
                     <p className="inline-flex items-center gap-2 text-sm font-medium text-gf-cta transition-all group-hover:text-gf-cta-hover dark:text-gf-cta dark:group-hover:text-gf-cta-hover">
                       Pročitaj više
                       <motion.span

@@ -19,7 +19,7 @@ export function generateOrganizationSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Gluten Freedom",
+    name: "Bezglutenska sila",
     url: SITE_URL,
     logo: getAbsoluteUrl("/images/logo.png"), // Ako postoji logo
     description: "Web aplikacija i informativna platforma vezana uz celijakiju, gluten free recepte, savjete, restorane i proizvode bez glutena.",
@@ -34,7 +34,7 @@ export function generateWebSiteSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Gluten Freedom",
+    name: "Bezglutenska sila",
     url: SITE_URL,
     description: "Web aplikacija i informativna platforma vezana uz celijakiju, gluten free recepte, savjete, restorane i proizvode bez glutena.",
     potentialAction: {
@@ -67,7 +67,7 @@ export function generateBlogPostingSchema(post: BlogPost) {
     },
     publisher: {
       "@type": "Organization",
-      name: "Gluten Freedom",
+      name: "Bezglutenska sila",
       url: SITE_URL,
     },
     mainEntityOfPage: {
@@ -92,7 +92,7 @@ export function generateRecipeSchema(recipe: Recipe) {
     image: getImageUrl(recipe.image),
     author: {
       "@type": "Organization",
-      name: "Gluten Freedom",
+      name: "Bezglutenska sila",
     },
     datePublished: recipe.createdAt,
     prepTime: `PT${recipe.prepTime}M`,
@@ -105,7 +105,7 @@ export function generateRecipeSchema(recipe: Recipe) {
       position: index + 1,
       text: instruction,
     })),
-    keywords: recipe.tags.join(", "),
+    keywords: recipe.category,
     recipeCategory: recipe.category,
     recipeCuisine: "Gluten Free",
     difficulty: recipe.difficulty,
@@ -133,7 +133,7 @@ export function generateRestaurantSchema(restaurant: Restaurant) {
       addressLocality: "Zagreb",
       addressCountry: "HR",
     },
-    servesCuisine: restaurant.cuisine,
+    servesCuisine: [], // Uklonjeno - više se ne koristi
   };
 
   if (restaurant.phone) {

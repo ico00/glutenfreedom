@@ -100,8 +100,8 @@ export function DatePicker({
   const handleDateSelect = (day: number) => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    const selectedDate = new Date(year, month, day);
-    const dateString = selectedDate.toISOString().split("T")[0];
+    // Formatiraj datum lokalno bez UTC konverzije
+    const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     onChange(dateString);
     setIsOpen(false);
   };
@@ -120,7 +120,8 @@ export function DatePicker({
 
   const handleToday = () => {
     const today = new Date();
-    const dateString = today.toISOString().split("T")[0];
+    // Formatiraj datum lokalno bez UTC konverzije
+    const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     onChange(dateString);
     setIsOpen(false);
   };
@@ -159,12 +160,20 @@ export function DatePicker({
         <input
           type="text"
           id={id}
+          name={id || "date"}
           value={displayValue}
           readOnly
           onClick={handleDisplayClick}
           placeholder="DD.MM.YYYY."
           required={required}
           className={`w-full cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 pr-10 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 ${className}`}
+        />
+        {/* Hidden input za stvarnu vrijednost (za form submission) */}
+        <input
+          type="hidden"
+          name={id ? `${id}_value` : "date_value"}
+          value={value}
+          required={required}
         />
         <button
           type="button"

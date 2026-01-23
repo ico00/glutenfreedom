@@ -22,11 +22,17 @@ function parseRecipeContent(markdown: string): { ingredients: string[]; instruct
   
   const lines = markdown.split('\n');
   let currentSection: 'ingredients' | 'instructions' | null = null;
+  let currentInstruction = '';
   
   for (const line of lines) {
     const trimmed = line.trim();
     
     if (trimmed.startsWith('## Sastojci') || trimmed.startsWith('## Sastojci:')) {
+      // Spremi prethodni instruction ako postoji
+      if (currentInstruction) {
+        instructions.push(currentInstruction.trim());
+        currentInstruction = '';
+      }
       currentSection = 'ingredients';
       continue;
     }
@@ -44,9 +50,22 @@ function parseRecipeContent(markdown: string): { ingredients: string[]; instruct
       // Podržava format "1. korak" ili "- korak"
       const match = trimmed.match(/^(?:\d+\.\s*|- )(.+)$/);
       if (match) {
-        instructions.push(match[1].trim());
+        // Spremi prethodni instruction ako postoji
+        if (currentInstruction) {
+          instructions.push(currentInstruction.trim());
+        }
+        // Započni novi instruction
+        currentInstruction = match[1].trim();
+      } else if (trimmed && currentInstruction) {
+        // Nastavak teksta za trenutni instruction (višelinijski tekst)
+        currentInstruction += '\n' + trimmed;
       }
     }
+  }
+  
+  // Spremi zadnji instruction
+  if (currentInstruction) {
+    instructions.push(currentInstruction.trim());
   }
   
   return { ingredients, instructions };

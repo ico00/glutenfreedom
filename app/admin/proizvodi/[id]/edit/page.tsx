@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload } from "lucide-react";
+import { ArrowLeft, Upload, Tag, Store, ShoppingBag, Scale } from "lucide-react";
 import { Product } from "@/types";
 import { getCsrfToken } from "@/lib/csrfClient";
+import { CustomSelect } from "@/components/CustomSelect";
 import { BRANDS, STORES, PRODUCT_CATEGORIES } from "@/lib/constants";
 
 export default function EditProizvodPage() {
@@ -185,20 +186,18 @@ export default function EditProizvodPage() {
             <label htmlFor="brand" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
               Marka *
             </label>
-            <select
+            <CustomSelect
               id="brand"
               required
               value={formData.brand}
-              onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            >
-              <option value="">Odaberi marku</option>
-              {brands.map((brand) => (
-                <option key={brand} value={brand}>
-                  {brand}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setFormData({ ...formData, brand: value })}
+              options={brands.map((brand) => ({
+                value: brand,
+                label: brand,
+                icon: <Tag className="h-4 w-4 text-gf-cta" />,
+              }))}
+              placeholder="Odaberi marku"
+            />
           </div>
 
           {/* Kategorija */}
@@ -206,20 +205,18 @@ export default function EditProizvodPage() {
             <label htmlFor="category" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
               Kategorija *
             </label>
-            <select
+            <CustomSelect
               id="category"
               required
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            >
-              <option value="">Odaberi kategoriju</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setFormData({ ...formData, category: value })}
+              options={categories.map((category) => ({
+                value: category,
+                label: category.charAt(0).toUpperCase() + category.slice(1),
+                icon: <ShoppingBag className="h-4 w-4 text-gf-safe" />,
+              }))}
+              placeholder="Odaberi kategoriju"
+            />
           </div>
 
           {/* Dućan */}
@@ -227,19 +224,17 @@ export default function EditProizvodPage() {
             <label htmlFor="store" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
               Dućan
             </label>
-            <select
+            <CustomSelect
               id="store"
               value={formData.store}
-              onChange={(e) => setFormData({ ...formData, store: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            >
-              <option value="">Odaberi dućan</option>
-              {stores.map((store) => (
-                <option key={store} value={store}>
-                  {store}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setFormData({ ...formData, store: value })}
+              options={stores.map((store) => ({
+                value: store,
+                label: store,
+                icon: <Store className="h-4 w-4 text-yellow-500" />,
+              }))}
+              placeholder="Odaberi dućan"
+            />
           </div>
 
           {/* Cijena i težina */}
@@ -273,15 +268,17 @@ export default function EditProizvodPage() {
                   className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                   placeholder="0"
                 />
-                <select
-                  id="weightUnit"
-                  value={formData.weightUnit}
-                  onChange={(e) => setFormData({ ...formData, weightUnit: e.target.value as "g" | "ml" })}
-                  className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                >
-                  <option value="g">g</option>
-                  <option value="ml">ml</option>
-                </select>
+                <div className="w-24">
+                  <CustomSelect
+                    id="weightUnit"
+                    value={formData.weightUnit}
+                    onChange={(value) => setFormData({ ...formData, weightUnit: value as "g" | "ml" })}
+                    options={[
+                      { value: "g", label: "g", icon: <Scale className="h-4 w-4 text-gf-text-secondary" /> },
+                      { value: "ml", label: "ml", icon: <Scale className="h-4 w-4 text-gf-text-secondary" /> },
+                    ]}
+                  />
+                </div>
               </div>
             </div>
           </div>

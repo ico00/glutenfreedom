@@ -74,8 +74,6 @@ export async function PUT(
     const servings = parseInt(formData.get("servings") as string) || existingRecipe.servings;
     const difficulty = (formData.get("difficulty") as "lako" | "srednje" | "teško") || existingRecipe.difficulty;
     const category = (formData.get("category") as string) || existingRecipe.category;
-    const tagsString = formData.get("tags") as string;
-    const tags = tagsString ? tagsString.split(",").map((tag) => tag.trim()).filter(Boolean) : existingRecipe.tags;
 
     // Parsiraj sastojke
     const ingredients: string[] = [];
@@ -255,7 +253,6 @@ export async function PUT(
       cookTime,
       servings,
       difficulty,
-      tags,
       category,
     };
 

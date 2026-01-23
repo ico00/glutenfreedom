@@ -96,11 +96,19 @@ export async function PUT(
 
     const { id } = await params;
     const formData = await request.formData();
-    const dynamicRestaurants = await readRestaurantsFile();
-    const restaurantIndex = dynamicRestaurants.findIndex((r) => r.id === id);
+    let dynamicRestaurants = await readRestaurantsFile();
+    let restaurantIndex = dynamicRestaurants.findIndex((r) => r.id === id);
 
+    // Ako restoran nije u JSON datoteci, provjeri mock podatke
     if (restaurantIndex === -1) {
-      return NextResponse.json({ message: "Restaurant not found" }, { status: 404 });
+      const mockRestaurant = mockRestaurants.find((r) => r.id === id);
+      if (mockRestaurant) {
+        // Dodaj mock restoran u JSON datoteku kako bismo ga mogli ažurirati
+        dynamicRestaurants.push({ ...mockRestaurant });
+        restaurantIndex = dynamicRestaurants.length - 1;
+      } else {
+        return NextResponse.json({ message: "Restaurant not found" }, { status: 404 });
+      }
     }
 
     const existingRestaurant = dynamicRestaurants[restaurantIndex];

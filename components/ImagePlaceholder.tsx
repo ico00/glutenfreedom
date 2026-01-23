@@ -14,7 +14,7 @@ interface ImagePlaceholderProps {
   priority?: boolean;
 }
 
-const APP_ICON = "/favicon.ico"; // Fallback na ikonu aplikacije
+const APP_ICON = "/images/logo.png"; // Fallback na logo aplikacije
 
 export function ImagePlaceholder({ 
   icon: Icon, 
@@ -81,7 +81,7 @@ export function ImagePlaceholder({
           >
             <Image
               src={APP_ICON}
-              alt="Gluten Freedom"
+              alt="Bezglutenska sila"
               fill
               className="object-contain"
               onError={() => {

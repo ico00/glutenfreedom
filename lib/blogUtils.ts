@@ -6,24 +6,58 @@ import { BlogPost, BlogPostMetadata } from "@/types";
 const contentDir = path.join(process.cwd(), "content", "posts");
 const blogMetadataPath = path.join(process.cwd(), "data", "blog.json");
 
-// Učitaj Markdown sadržaj za post
+// Učitaj HTML sadržaj za post
 export async function readPostContent(postId: string): Promise<string> {
-  const contentPath = path.join(contentDir, `${postId}.md`);
-  try {
-    if (existsSync(contentPath)) {
-      return await readFile(contentPath, "utf-8");
+  // Prvo pokušaj učitati .html fajl
+  const htmlPath = path.join(contentDir, `${postId}.html`);
+  if (existsSync(htmlPath)) {
+    try {
+      return await readFile(htmlPath, "utf-8");
+    } catch (error) {
+      console.error(`Error reading HTML content for ${postId}:`, error);
     }
-    return "";
-  } catch (error) {
-    console.error(`Error reading post content for ${postId}:`, error);
-    return "";
   }
+  
+  // Fallback: ako ne postoji .html, pokušaj učitati .md (za backward compatibility)
+  const mdPath = path.join(contentDir, `${postId}.md`);
+  if (existsSync(mdPath)) {
+    try {
+      const markdown = await readFile(mdPath, "utf-8");
+      // Konvertiraj Markdown u HTML za backward compatibility
+      // Koristimo jednostavnu konverziju
+      let html = markdown;
+      html = html.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/__([^_]+?)__/g, '<strong>$1</strong>');
+      html = html.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em>$1</em>');
+      html = html.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em>$1</em>');
+      html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+      html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+      html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+      html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+      html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />');
+      html = html.split('\n\n').map(para => {
+        para = para.trim();
+        if (!para) return '<p>&nbsp;</p>';
+        if (!para.match(/^<(h[1-4]|ul|ol|img|p)/)) {
+          return '<p>' + para + '</p>';
+        }
+        return para;
+      }).join('\n');
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    } catch (error) {
+      console.error(`Error reading Markdown content for ${postId}:`, error);
+    }
+  }
+  
+  return "";
 }
 
-// Spremi Markdown sadržaj za post
+// Spremi HTML sadržaj za post
 export async function writePostContent(postId: string, content: string): Promise<void> {
   await mkdir(contentDir, { recursive: true });
-  const contentPath = path.join(contentDir, `${postId}.md`);
+  const contentPath = path.join(contentDir, `${postId}.html`);
   await writeFile(contentPath, content, "utf-8");
 }
 
@@ -94,13 +128,13 @@ export async function readOldBlogPosts(): Promise<BlogPost[]> {
   return [];
 }
 
-// Izračunaj vrijeme čitanja na temelju Markdown sadržaja
+// Izračunaj vrijeme čitanja na temelju HTML sadržaja
 export function calculateReadTime(content: string): number {
-  // Ukloni Markdown sintaksu i razdvoji riječi
+  // Ukloni HTML tagove i razdvoji riječi
   const text = content
-    .replace(/[#*`_~\[\]()]/g, ' ') // Ukloni Markdown znakove
-    .replace(/!\[.*?\]\(.*?\)/g, ' ') // Ukloni slike
-    .replace(/\[.*?\]\(.*?\)/g, ' ') // Ukloni linkove
+    .replace(/<[^>]+>/g, ' ') // Ukloni HTML tagove
+    .replace(/&nbsp;/g, ' ') // Ukloni &nbsp;
+    .replace(/&[a-z]+;/gi, ' ') // Ukloni HTML entitete
     .replace(/\s+/g, ' ')
     .trim();
   

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "1",
+    "name": "Garden",
+    "description": "",
+    "address": "Prilaz Gjure Deželića 87, Zagreb",
+    "phone": "+385 1 234 5680",
+    "website": "https://www.garden.hr",
+    "type": "dućan",
+    "image": "/images/stores/1-1769169644626-233p03a-garden_logo_crni-01-1.jpg"
+  },
+  {
+    "id": "36b9392c-312a-4268-b9d1-cc2e53f4c1dc",
+    "name": "Bio&Bio",
+    "description": "Veliki lanac bio dućana, pa si potražite lokaciju koja vam je najbliža",
+    "address": "Ilica 70, Zagreb",
+    "website": "https://www.biobio.hr",
+    "type": "dućan",
+    "image": "/images/stores/36b9392c-312a-4268-b9d1-cc2e53f4c1dc-1769171192629-kq6v6b5-biobio-logo.png"
+  }
+]

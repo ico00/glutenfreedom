@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { Menu, X, Sun, Moon, Lock } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
@@ -12,10 +13,11 @@ export function Header() {
 
   const navItems = [
     { href: "/", label: "Početna" },
-    { href: "/recepti", label: "Recepti" },
     { href: "/blog", label: "Blog" },
+    { href: "/recepti", label: "Recepti" },
     { href: "/restorani", label: "Restorani" },
     { href: "/proizvodi", label: "Proizvodi" },
+    { href: "/ducani", label: "Dućani" },
   ];
 
   return (
@@ -25,13 +27,18 @@ export function Header() {
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            className="relative h-8 w-8"
           >
-            <span className="text-2xl font-bold text-gf-cta dark:text-gf-cta">
-              🌾
-            </span>
+            <Image
+              src="/images/logo.png"
+              alt="Bezglutenska sila"
+              fill
+              className="object-contain"
+              priority
+            />
           </motion.div>
           <span className="text-xl font-bold text-gf-text-primary dark:text-neutral-100">
-            Gluten Freedom
+            Bezglutenska sila
           </span>
         </Link>
 

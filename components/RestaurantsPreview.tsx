@@ -122,21 +122,6 @@ export function RestaurantsPreview() {
                       </div>
                     )}
                   </div>
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {restaurant.cuisine.slice(0, 2).map((cuisine, cuisineIndex) => (
-                      <motion.span
-                        key={cuisine}
-                        initial={{ opacity: 0, scale: 0 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.2 + cuisineIndex * 0.1 + 0.4 }}
-                        whileHover={{ scale: 1.1 }}
-                        className="cursor-default rounded-full bg-gf-bg-soft px-3 py-1 text-xs font-medium text-gf-text-secondary transition-colors hover:bg-gf-cta/20 dark:bg-neutral-700 dark:text-neutral-300"
-                      >
-                        {cuisine}
-                      </motion.span>
-                    ))}
-                  </div>
                   <p className="inline-flex items-center gap-2 text-sm font-medium text-gf-cta transition-all group-hover:text-gf-cta-hover dark:text-gf-cta dark:group-hover:text-gf-cta-hover">
                     Vidi detalje
                     <motion.span

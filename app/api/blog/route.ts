@@ -154,12 +154,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // Konvertiraj HTML u Markdown (ili koristi direktno ako je već Markdown)
+    // Uzmi HTML sadržaj i sanitiziraj ga
     let content = formData.get("content") as string;
-    // Sanitiziraj HTML prije konverzije
+    // Sanitiziraj HTML (dozvoljava samo sigurne tagove)
     content = sanitizeHtml(content);
-    // Ako je HTML, konvertiraj u Markdown (osnovna konverzija)
-    content = htmlToMarkdown(content);
 
     // Sanitiziraj i validiraj inpute
     const title = sanitizeString(formData.get("title") as string, 200);
@@ -238,7 +236,7 @@ export async function POST(request: Request) {
       excerpt,
       image: "", // Will be updated after image upload
       gallery: [], // Will be updated after gallery upload
-      author: session.user.email || "Admin", // Koristi email iz sessiona
+      author: "Ivica Drusany",
       tags,
       category: category,
       readTime: readTime,
@@ -305,44 +303,3 @@ export async function POST(request: Request) {
   }
 }
 
-// Osnovna konverzija HTML-a u Markdown
-function htmlToMarkdown(html: string): string {
-  let markdown = html;
-  
-  // Prvo, zamijeni prazne paragrafe (<p></p> ili <p> </p>) s praznim paragrafom u Markdownu
-  // Koristimo &nbsp; ili razmak da osiguramo da se paragraf prikaže
-  markdown = markdown.replace(/<p>\s*<\/p>/g, '\n\n&nbsp;\n\n');
-  
-  // Zamijeni HTML tagove s Markdown ekvivalentima
-  markdown = markdown.replace(/<p>/g, '').replace(/<\/p>/g, '\n\n');
-  markdown = markdown.replace(/<h1>/g, '# ').replace(/<\/h1>/g, '\n\n');
-  markdown = markdown.replace(/<h2>/g, '## ').replace(/<\/h2>/g, '\n\n');
-  markdown = markdown.replace(/<h3>/g, '### ').replace(/<\/h3>/g, '\n\n');
-  markdown = markdown.replace(/<h4>/g, '#### ').replace(/<\/h4>/g, '\n\n');
-  markdown = markdown.replace(/<strong>/g, '**').replace(/<\/strong>/g, '**');
-  markdown = markdown.replace(/<b>/g, '**').replace(/<\/b>/g, '**');
-  markdown = markdown.replace(/<em>/g, '*').replace(/<\/em>/g, '*');
-  markdown = markdown.replace(/<i>/g, '*').replace(/<\/i>/g, '*');
-  markdown = markdown.replace(/<u>/g, '').replace(/<\/u>/g, '');
-  markdown = markdown.replace(/<br\s*\/?>/g, '\n');
-  markdown = markdown.replace(/<ul>/g, '').replace(/<\/ul>/g, '\n');
-  markdown = markdown.replace(/<ol>/g, '').replace(/<\/ol>/g, '\n');
-  markdown = markdown.replace(/<li>/g, '- ').replace(/<\/li>/g, '\n');
-  markdown = markdown.replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g, '[$2]($1)');
-  // Zadrži align atribut za slike
-  markdown = markdown.replace(/<img[^>]+src="([^"]+)"[^>]*(?:align="([^"]*)")?[^>]*alt="([^"]*)"[^>]*>/g, (match, src, align, alt) => {
-    if (align) {
-      return `![${alt || ""}](${src} "align:${align}")`;
-    }
-    return `![${alt || ""}](${src})`;
-  });
-  
-  // Ukloni sve preostale HTML tagove
-  markdown = markdown.replace(/<[^>]+>/g, '');
-  
-  // Očisti višestruke prazne linije (ali zadrži &nbsp; za prazne paragrafe)
-  markdown = markdown.replace(/\n{4,}/g, '\n\n\n');
-  
-  // Ukloni samo početne i završne prazne linije, ali zadrži &nbsp;
-  return markdown.trim();
-}

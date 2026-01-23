@@ -3,12 +3,12 @@ import { BlogPost, Recipe, Restaurant, Product } from "@/types";
 import { getAbsoluteUrl, getImageUrl } from "./seo";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-const SITE_NAME = "Gluten Freedom";
+const SITE_NAME = "Bezglutenska sila";
 
 // Osnovni metadata za glavnu stranicu
 export function generateHomeMetadata(): Metadata {
   return {
-    title: "Gluten Freedom - Celijakija, Recepti i Savjeti",
+    title: "Bezglutenska sila - Celijakija, Recepti i Savjeti",
     description: "Web aplikacija i informativna platforma vezana uz celijakiju, gluten free recepte, savjete, restorane i proizvode bez glutena.",
     keywords: ["celijakija", "gluten free", "recepti", "restorani", "Zagreb", "bez glutena", "gluten free recepti"],
     openGraph: {
@@ -16,20 +16,20 @@ export function generateHomeMetadata(): Metadata {
       locale: "hr_HR",
       url: SITE_URL,
       siteName: SITE_NAME,
-      title: "Gluten Freedom - Celijakija, Recepti i Savjeti",
+      title: "Bezglutenska sila - Celijakija, Recepti i Savjeti",
       description: "Web aplikacija i informativna platforma vezana uz celijakiju, gluten free recepte, savjete, restorane i proizvode bez glutena.",
       images: [
         {
           url: getImageUrl("/images/og-image.jpg") || getAbsoluteUrl("/images/blog/default.jpg"),
           width: 1200,
           height: 630,
-          alt: "Gluten Freedom",
+          alt: "Bezglutenska sila",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Gluten Freedom - Celijakija, Recepti i Savjeti",
+      title: "Bezglutenska sila - Celijakija, Recepti i Savjeti",
       description: "Web aplikacija i informativna platforma vezana uz celijakiju, gluten free recepte, savjete, restorane i proizvode bez glutena.",
       images: [getImageUrl("/images/og-image.jpg") || getAbsoluteUrl("/images/blog/default.jpg")],
     },
@@ -83,7 +83,7 @@ export function generateRecipeMetadata(recipe: Recipe): Metadata {
   return {
     title: `${recipe.title} | ${SITE_NAME}`,
     description: recipe.description,
-    keywords: recipe.tags,
+    keywords: ["recept", "gluten free", recipe.category],
     openGraph: {
       type: "article",
       locale: "hr_HR",
@@ -117,7 +117,7 @@ export function generateRestaurantMetadata(restaurant: Restaurant): Metadata {
   return {
     title: `${restaurant.name} | ${SITE_NAME}`,
     description: restaurant.description,
-    keywords: ["restoran", "gluten free", "Zagreb", ...restaurant.cuisine],
+    keywords: ["restoran", "gluten free", "Zagreb"],
     openGraph: {
       type: "website",
       locale: "hr_HR",

@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, X, Search, Package, Plus } from "lucide-react";
+import { ArrowLeft, Upload, X, Search, Package, Plus, ChefHat, Gauge } from "lucide-react";
 import { Product } from "@/types";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import { CustomSelect } from "@/components/CustomSelect";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { RECIPE_CATEGORIES } from "@/lib/constants";
 
@@ -25,7 +26,6 @@ export default function NoviReceptPage() {
     difficulty: "lako" as "lako" | "srednje" | "teško",
     ingredients: [""],
     instructions: [""],
-    tags: "",
     category: "",
   });
   const [products, setProducts] = useState<Product[]>([]);
@@ -172,7 +172,6 @@ export default function NoviReceptPage() {
       formDataToSend.append("servings", formData.servings);
       formDataToSend.append("difficulty", formData.difficulty);
       formDataToSend.append("category", formData.category);
-      formDataToSend.append("tags", formData.tags);
       
       formData.ingredients.forEach((ingredient, index) => {
         formDataToSend.append(`ingredients[${index}]`, ingredient);
@@ -313,51 +312,39 @@ export default function NoviReceptPage() {
                   <label className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
                     Težina *
                   </label>
-                  <select
+                  <CustomSelect
+                    id="difficulty"
                     required
                     value={formData.difficulty}
-                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as any })}
-                    className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                  >
-                    <option value="lako">Lako</option>
-                    <option value="srednje">Srednje</option>
-                    <option value="teško">Teško</option>
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, difficulty: value as "lako" | "srednje" | "teško" })}
+                    options={[
+                      { value: "lako", label: "Lako", icon: <Gauge className="h-4 w-4 text-gf-safe" /> },
+                      { value: "srednje", label: "Srednje", icon: <Gauge className="h-4 w-4 text-yellow-500" /> },
+                      { value: "teško", label: "Teško", icon: <Gauge className="h-4 w-4 text-gf-risk" /> },
+                    ]}
+                    placeholder="Odaberi težinu"
+                  />
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
                     Kategorija *
                   </label>
-                  <select
+                  <CustomSelect
+                    id="category"
                     required
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                  >
-                    <option value="">Odaberi kategoriju</option>
-                    {RECIPE_CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, category: value })}
+                    options={RECIPE_CATEGORIES.map((category) => ({
+                      value: category,
+                      label: category,
+                      icon: <ChefHat className="h-4 w-4 text-gf-cta" />,
+                    }))}
+                    placeholder="Odaberi kategoriju"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-                  Tagovi (odvojeni zarezom) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.tags}
-                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  placeholder="npr. kruh, doručak, osnovno"
-                  className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                />
-              </div>
             </div>
           </div>
 

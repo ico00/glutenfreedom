@@ -1,4 +1,4 @@
-# Gluten Freedom
+# Bezglutenska sila
 
 Web aplikacija i informativna platforma vezana uz celijakiju, gluten free recepte, savjete, restorane i proizvode bez glutena.
 

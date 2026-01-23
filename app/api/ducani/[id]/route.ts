@@ -106,11 +106,19 @@ export async function PUT(
       }
     }
 
-    const currentStores = await readStoresFile();
-    const storeIndex = currentStores.findIndex((s) => s.id === id);
-
+    let currentStores = await readStoresFile();
+    let storeIndex = currentStores.findIndex((s) => s.id === id);
+    
+    // Ako dućan nije u JSON datoteci, provjeri mock podatke
     if (storeIndex === -1) {
-      return NextResponse.json({ message: "Store not found" }, { status: 404 });
+      const mockStore = mockStores.find((s) => s.id === id);
+      if (mockStore) {
+        // Dodaj mock dućan u JSON datoteku kako bismo ga mogli ažurirati
+        currentStores.push({ ...mockStore });
+        storeIndex = currentStores.length - 1;
+      } else {
+        return NextResponse.json({ message: "Store not found" }, { status: 404 });
+      }
     }
 
     const existingStore = currentStores[storeIndex];

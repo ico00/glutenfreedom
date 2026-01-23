@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Clock, Users, ArrowLeft } from "lucide-react";
+import { Clock, Users, ArrowLeft, ChefHat, Utensils, Check } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { GallerySection } from "@/components/GallerySection";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -107,54 +107,77 @@ export default async function RecipeDetailPage({
             {recipe.description}
           </p>
 
-          <div className="mb-8 flex flex-wrap gap-2">
-            {recipe.tags && recipe.tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-gf-safe/20 px-3 py-1 text-sm font-medium text-gf-safe dark:bg-gf-safe/30 dark:text-gf-safe"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-2">
-            <div>
-              <h2 className="mb-4 text-2xl font-semibold text-gf-text-primary dark:text-neutral-100">
-                Sastojci
-              </h2>
-              <ul className="space-y-2">
-                {recipe.ingredients && recipe.ingredients.length > 0 ? (
-                  recipe.ingredients.map((ingredient, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start gap-2 text-gf-text-primary dark:text-neutral-300"
-                    >
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gf-cta dark:bg-gf-cta" />
-                      <span>{ingredient}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-gf-text-secondary dark:text-neutral-400">Nema sastojaka</li>
-                )}
-              </ul>
+          <div className="grid gap-8 lg:grid-cols-5">
+            {/* Sastojci - lijeva strana */}
+            <div className="lg:col-span-2">
+              <div className="sticky top-24 rounded-2xl border border-neutral-200 bg-gradient-to-br from-gf-cta/5 via-white to-gf-safe/5 p-6 shadow-sm dark:border-neutral-700 dark:from-gf-cta/10 dark:via-neutral-800 dark:to-gf-safe/10">
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gf-cta to-gf-cta-hover shadow-lg shadow-gf-cta/25">
+                    <Utensils className="h-5 w-5 text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gf-text-primary dark:text-neutral-100">
+                    Sastojci
+                  </h2>
+                </div>
+                
+                <div className="mb-4 flex items-center gap-2 rounded-lg bg-gf-safe/10 px-3 py-2 dark:bg-gf-safe/20">
+                  <Users className="h-4 w-4 text-gf-safe" />
+                  <span className="text-sm font-medium text-gf-safe">
+                    Za {recipe.servings} {recipe.servings === 1 ? 'porciju' : recipe.servings < 5 ? 'porcije' : 'porcija'}
+                  </span>
+                </div>
+                
+                <ul className="space-y-2">
+                  {recipe.ingredients && recipe.ingredients.length > 0 ? (
+                    recipe.ingredients.map((ingredient, index) => (
+                      <li
+                        key={index}
+                        className="group flex items-center gap-3 rounded-xl border border-transparent bg-white/60 px-4 py-3 transition-all hover:border-gf-cta/20 hover:bg-white hover:shadow-sm dark:bg-neutral-800/60 dark:hover:bg-neutral-800"
+                      >
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gf-cta/10 text-gf-cta transition-colors group-hover:bg-gf-cta group-hover:text-white dark:bg-gf-cta/20">
+                          <Check className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="text-gf-text-primary dark:text-neutral-200">{ingredient}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-gf-text-secondary dark:text-neutral-400">Nema sastojaka</li>
+                  )}
+                </ul>
+              </div>
             </div>
 
-            <div>
-              <h2 className="mb-4 text-2xl font-semibold text-gf-text-primary dark:text-neutral-100">
-                Priprema
-              </h2>
-              <ol className="space-y-4">
+            {/* Priprema - desna strana */}
+            <div className="lg:col-span-3">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gf-safe to-emerald-500 shadow-lg shadow-gf-safe/25">
+                  <ChefHat className="h-5 w-5 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-gf-text-primary dark:text-neutral-100">
+                  Priprema
+                </h2>
+              </div>
+              
+              <ol className="relative space-y-6 border-l-2 border-gf-cta/20 pl-8 dark:border-gf-cta/30">
                 {recipe.instructions && recipe.instructions.length > 0 ? (
                   recipe.instructions.map((instruction, index) => (
                     <li
                       key={index}
-                      className="flex gap-4 text-gf-text-primary dark:text-neutral-300"
+                      className="relative"
                     >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gf-cta text-sm font-semibold text-white dark:bg-gf-cta">
+                      {/* Broj koraka na liniji */}
+                      <span className="absolute -left-[41px] flex h-8 w-8 items-center justify-center rounded-full border-4 border-gf-bg-card bg-gradient-to-br from-gf-cta to-gf-cta-hover text-sm font-bold text-white shadow-lg dark:border-neutral-900">
                         {index + 1}
                       </span>
-                      <span className="pt-1">{instruction}</span>
+                      
+                      {/* Sadržaj koraka */}
+                      <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-all hover:border-gf-cta/30 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-800">
+                        <div className="text-gf-text-primary dark:text-neutral-200 space-y-4" style={{ lineHeight: '1.75' }}>
+                          {instruction.split('\n').map((paragraph, pIndex) => (
+                            <p key={pIndex}>{paragraph}</p>
+                          ))}
+                        </div>
+                      </div>
                     </li>
                   ))
                 ) : (

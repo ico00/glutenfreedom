@@ -118,19 +118,16 @@ export function FeaturedRecipes() {
                     {recipe.description}
                   </p>
                   <div className="mb-4 flex flex-wrap gap-2">
-                    {recipe.tags.slice(0, 3).map((tag, tagIndex) => (
-                      <motion.span
-                        key={tag}
-                        initial={{ opacity: 0, scale: 0 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.2 + tagIndex * 0.1 + 0.4 }}
-                        whileHover={{ scale: 1.1 }}
-                        className="cursor-default rounded-full bg-gf-safe/20 px-3 py-1 text-xs font-medium text-gf-safe transition-colors hover:bg-gf-safe/30 dark:bg-gf-safe/30 dark:text-gf-safe"
-                      >
-                        {tag}
-                      </motion.span>
-                    ))}
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.2 + 0.4 }}
+                      whileHover={{ scale: 1.1 }}
+                      className="cursor-default rounded-full bg-gf-safe/20 px-3 py-1 text-xs font-medium text-gf-safe transition-colors hover:bg-gf-safe/30 dark:bg-gf-safe/30 dark:text-gf-safe"
+                    >
+                      {recipe.category}
+                    </motion.span>
                   </div>
                   <p className="inline-flex items-center gap-2 text-sm font-medium text-gf-cta transition-all group-hover:text-gf-cta-hover dark:text-gf-cta dark:group-hover:text-gf-cta-hover">
                     Vidi recept

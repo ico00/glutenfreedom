@@ -62,18 +62,18 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="text-4xl font-bold tracking-tight text-gf-text-primary sm:text-5xl md:text-6xl dark:text-neutral-100"
+            className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl"
           >
-            Dobrodošli u svijet{" "}
+            <span className="text-gf-cta dark:text-gf-cta">From my point of view,</span>{" "}
             <motion.span
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.5, type: "spring" }}
-              className="relative inline-block text-gf-cta dark:text-gf-cta"
+              className="relative inline-block text-black dark:text-neutral-900"
             >
-              bez glutena
+              Gluten is evil.
               <motion.span
-                className="absolute -bottom-2 left-0 h-1 w-full bg-gf-cta"
+                className="absolute -bottom-2 left-0 h-1 w-full bg-black dark:bg-neutral-900"
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ delay: 0.7, duration: 0.5 }}
@@ -87,8 +87,8 @@ export function Hero() {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gf-text-secondary dark:text-neutral-300"
           >
-            Dijelim svoja iskustva, recepte i savjete koje sam naučio tijekom godina života s celijakijom. 
-            Nismo sami u ovome - zajedno možemo učiniti bezglutenski život lakšim i ukusnijim.
+            Dijelim svoja iskustva, recepte i patnje koje sam naučio tijekom godina druženja s celijakijom. 
+            
           </motion.p>
 
           <motion.div

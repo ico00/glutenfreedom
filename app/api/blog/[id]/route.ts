@@ -266,9 +266,13 @@ export async function PUT(
       const baseNewId = generatePostId(newTitle, newCreatedAt);
       newId = await ensureUniquePostId(baseNewId, existingPost.id);
       
-      // Preimenuj markdown fajl
-      const oldContentPath = path.join(process.cwd(), "content", "posts", `${oldId}.md`);
-      const newContentPath = path.join(process.cwd(), "content", "posts", `${newId}.md`);
+      // Preimenuj HTML fajl
+      const oldContentPath = path.join(process.cwd(), "content", "posts", `${oldId}.html`);
+      const newContentPath = path.join(process.cwd(), "content", "posts", `${newId}.html`);
+      
+      // Također provjeri .md fajl za backward compatibility
+      const oldMdPath = path.join(process.cwd(), "content", "posts", `${oldId}.md`);
+      const newMdPath = path.join(process.cwd(), "content", "posts", `${newId}.md`);
       
       if (existsSync(oldContentPath)) {
         try {
@@ -277,21 +281,31 @@ export async function PUT(
             await unlink(newContentPath);
           }
           await rename(oldContentPath, newContentPath);
-          console.log(`Renamed markdown file: ${oldId}.md → ${newId}.md`);
+          console.log(`Renamed HTML file: ${oldId}.html → ${newId}.html`);
         } catch (error) {
-          console.error(`Error renaming markdown file:`, error);
+          console.error(`Error renaming HTML file:`, error);
+        }
+      } else if (existsSync(oldMdPath)) {
+        // Fallback za stari .md fajl
+        try {
+          if (existsSync(newMdPath)) {
+            await unlink(newMdPath);
+          }
+          await rename(oldMdPath, newMdPath);
+          console.log(`Renamed Markdown file: ${oldId}.md → ${newId}.md`);
+        } catch (error) {
+          console.error(`Error renaming Markdown file:`, error);
         }
       }
     }
 
-    // Konvertiraj HTML u Markdown
+    // Uzmi HTML sadržaj i sanitiziraj ga
     let content = (formData.get("content") as string) || existingPost.content;
-    // Sanitiziraj HTML prije konverzije
+    // Sanitiziraj HTML (dozvoljava samo sigurne tagove)
     content = sanitizeHtml(content);
-    content = htmlToMarkdown(content);
     const readTime = calculateReadTime(content);
 
-    // Ažuriraj Markdown sadržaj (koristi novi ID ako je promijenjen)
+    // Ažuriraj HTML sadržaj (koristi novi ID ako je promijenjen)
     await writePostContent(newId, content);
 
     // Ako je ID promijenjen, preimenuj slike
@@ -334,7 +348,7 @@ export async function PUT(
       excerpt: newExcerpt,
       image: updatedImage,
       gallery: updatedGallery,
-      author: session.user.email || existingPost.author, // Koristi email iz sessiona
+      author: "Ivica Drusany",
       tags,
       category: (() => {
         const categoryData = formData.get("category") as string;
@@ -469,7 +483,6 @@ export async function DELETE(
     });
 
     // Provjeri rate limit
-    const clientIp = getClientIp(request);
     const rateLimit = checkRateLimit(`blog-delete-${clientIp}`, 5, 60000);
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -496,13 +509,19 @@ export async function DELETE(
     const filteredMetadata = metadataList.filter((p) => p.id !== id);
     await writeBlogMetadata(filteredMetadata);
 
-    // Obriši Markdown fajl
-    const contentPath = path.join(process.cwd(), "content", "posts", `${id}.md`);
+    // Obriši HTML fajl
+    const contentPath = path.join(process.cwd(), "content", "posts", `${id}.html`);
     try {
       await unlink(contentPath);
     } catch (error) {
-      // Ignoriraj grešku ako fajl ne postoji
-      console.log(`Markdown file not found for ${id}`);
+      // Fallback: pokušaj obrisati .md fajl za backward compatibility
+      const mdPath = path.join(process.cwd(), "content", "posts", `${id}.md`);
+      try {
+        await unlink(mdPath);
+      } catch (mdError) {
+        // Ignoriraj grešku ako fajl ne postoji
+        console.log(`Content file not found for ${id}`);
+      }
     }
 
     // Dodaj ID u listu obrisanih postova (kako se ne bi prikazivao ni mock verzija)
@@ -527,44 +546,3 @@ export async function DELETE(
   }
 }
 
-// Osnovna konverzija HTML-a u Markdown
-function htmlToMarkdown(html: string): string {
-  let markdown = html;
-  
-  // Prvo, zamijeni prazne paragrafe (<p></p> ili <p> </p>) s praznim paragrafom u Markdownu
-  // Koristimo &nbsp; ili razmak da osiguramo da se paragraf prikaže
-  markdown = markdown.replace(/<p>\s*<\/p>/g, '\n\n&nbsp;\n\n');
-  
-  // Zamijeni HTML tagove s Markdown ekvivalentima
-  markdown = markdown.replace(/<p>/g, '').replace(/<\/p>/g, '\n\n');
-  markdown = markdown.replace(/<h1>/g, '# ').replace(/<\/h1>/g, '\n\n');
-  markdown = markdown.replace(/<h2>/g, '## ').replace(/<\/h2>/g, '\n\n');
-  markdown = markdown.replace(/<h3>/g, '### ').replace(/<\/h3>/g, '\n\n');
-  markdown = markdown.replace(/<h4>/g, '#### ').replace(/<\/h4>/g, '\n\n');
-  markdown = markdown.replace(/<strong>/g, '**').replace(/<\/strong>/g, '**');
-  markdown = markdown.replace(/<b>/g, '**').replace(/<\/b>/g, '**');
-  markdown = markdown.replace(/<em>/g, '*').replace(/<\/em>/g, '*');
-  markdown = markdown.replace(/<i>/g, '*').replace(/<\/i>/g, '*');
-  markdown = markdown.replace(/<u>/g, '').replace(/<\/u>/g, '');
-  markdown = markdown.replace(/<br\s*\/?>/g, '\n');
-  markdown = markdown.replace(/<ul>/g, '').replace(/<\/ul>/g, '\n');
-  markdown = markdown.replace(/<ol>/g, '').replace(/<\/ol>/g, '\n');
-  markdown = markdown.replace(/<li>/g, '- ').replace(/<\/li>/g, '\n');
-  markdown = markdown.replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g, '[$2]($1)');
-  // Zadrži align atribut za slike
-  markdown = markdown.replace(/<img[^>]+src="([^"]+)"[^>]*(?:align="([^"]*)")?[^>]*alt="([^"]*)"[^>]*>/g, (match, src, align, alt) => {
-    if (align) {
-      return `![${alt || ""}](${src} "align:${align}")`;
-    }
-    return `![${alt || ""}](${src})`;
-  });
-  
-  // Ukloni sve preostale HTML tagove
-  markdown = markdown.replace(/<[^>]+>/g, '');
-  
-  // Očisti višestruke prazne linije (ali zadrži &nbsp; za prazne paragrafe)
-  markdown = markdown.replace(/\n{4,}/g, '\n\n\n');
-  
-  // Ukloni samo početne i završne prazne linije, ali zadrži &nbsp;
-  return markdown.trim();
-}

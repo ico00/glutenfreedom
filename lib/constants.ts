@@ -10,6 +10,7 @@ export const BRANDS = [
   "Gavrilović",
   "Vitaminka",
   "Alnavit",
+  "Callebaut",
   "Ostalo",
 ] as const;
 

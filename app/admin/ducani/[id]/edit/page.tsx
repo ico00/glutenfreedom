@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { ArrowLeft, Upload, X, Store as StoreIcon, Globe, ShoppingCart } from "lucide-react";
 import { Store } from "@/types";
 import { getCsrfToken } from "@/lib/csrfClient";
+import { CustomSelect } from "@/components/CustomSelect";
 
 export default function EditDucanPage() {
   const router = useRouter();
@@ -219,17 +220,18 @@ export default function EditDucanPage() {
             <label htmlFor="type" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
               Tip *
             </label>
-            <select
+            <CustomSelect
               id="type"
               required
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value as "dućan" | "online" | "oboje" })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            >
-              <option value="dućan">Dućan</option>
-              <option value="online">Online</option>
-              <option value="oboje">Oboje</option>
-            </select>
+              onChange={(value) => setFormData({ ...formData, type: value as "dućan" | "online" | "oboje" })}
+              options={[
+                { value: "dućan", label: "Dućan", icon: <StoreIcon className="h-4 w-4 text-gf-cta" /> },
+                { value: "online", label: "Online", icon: <Globe className="h-4 w-4 text-gf-safe" /> },
+                { value: "oboje", label: "Oboje", icon: <ShoppingCart className="h-4 w-4 text-yellow-500" /> },
+              ]}
+              placeholder="Odaberi tip"
+            />
           </div>
 
           {/* Slika */}

@@ -1,32 +1,102 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload, X, Plus } from "lucide-react";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { DatePicker } from "@/components/DatePicker";
 import { getCsrfToken } from "@/lib/csrfClient";
-import { BLOG_CATEGORIES, COMMON_TAGS } from "@/lib/constants";
+import { BLOG_CATEGORIES } from "@/lib/constants";
 
 export default function NoviBlogPostPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     excerpt: "",
     content: "",
     image: null as File | null,
     gallery: [] as File[],
-    tags: [] as string[], // Array tagova
     category: [] as string[], // Array kategorija
     createdAt: new Date().toISOString().split("T")[0], // Default: današnji datum
   });
-  const [newTag, setNewTag] = useState("");
-  const [existingTags, setExistingTags] = useState<string[]>([]); // Postojeći tagovi iz svih postova
-  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  
+  // Provjeri ima li nesačuvanih promjena
+  const checkForChanges = useCallback(() => {
+    return formData.title.trim() !== "" || 
+           formData.excerpt.trim() !== "" || 
+           formData.content.trim() !== "" || 
+           formData.image !== null || 
+           formData.gallery.length > 0 ||
+           formData.category.length > 0;
+  }, [formData]);
+  
+  // Ažuriraj hasUnsavedChanges kad se podaci promijene
+  useEffect(() => {
+    setHasUnsavedChanges(checkForChanges());
+  }, [formData, checkForChanges]);
+  
+  // Upozorenje prije zatvaranja/refresha stranice
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      }
+    };
+    
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+  
+  // Presretanje klikova na sve linkove
+  useEffect(() => {
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a');
+      
+      if (link && hasUnsavedChanges) {
+        const href = link.getAttribute('href');
+        // Provjeri je li to interni link (ne eksterni)
+        if (href && !href.startsWith('http') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
+          e.preventDefault();
+          e.stopPropagation();
+          setPendingNavigation(href);
+          setShowUnsavedModal(true);
+        }
+      }
+    };
+    
+    // Dodaj event listener na document
+    document.addEventListener('click', handleLinkClick, true);
+    return () => document.removeEventListener('click', handleLinkClick, true);
+  }, [hasUnsavedChanges]);
+  
+  // Funkcija za sigurnu navigaciju
+  const handleSafeNavigation = (href: string) => {
+    if (hasUnsavedChanges) {
+      setPendingNavigation(href);
+      setShowUnsavedModal(true);
+    } else {
+      router.push(href);
+    }
+  };
+  
+  // Potvrdi napuštanje stranice
+  const confirmNavigation = () => {
+    setShowUnsavedModal(false);
+    setHasUnsavedChanges(false); // Resetiraj da se ne aktivira ponovno
+    if (pendingNavigation) {
+      router.push(pendingNavigation);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -64,71 +134,19 @@ export default function NoviBlogPostPage() {
     setGalleryPreviews(newPreviews);
   };
 
-  // Učitaj sve postojeće tagove iz blog postova
-  useEffect(() => {
-    async function loadExistingTags() {
-      try {
-        const response = await fetch("/api/blog", {
-          cache: 'no-store',
-        });
-        if (response.ok) {
-          const posts = await response.json();
-          // Ekstraktuj sve tagove iz svih postova (zadrži originalni case)
-          const allTags = posts.flatMap((post: any) => {
-            if (Array.isArray(post.tags)) {
-              return post.tags;
-            }
-            return post.tags ? [post.tags] : [];
-          });
-          // Ukloni duplikate (case-insensitive) ali zadrži originalni case prvog pojavljivanja
-          const tagMap = new Map<string, string>();
-          allTags.forEach((tag: string) => {
-            const lowerTag = tag.toLowerCase();
-            if (!tagMap.has(lowerTag)) {
-              tagMap.set(lowerTag, tag);
-            }
-          });
-          const uniqueTags = Array.from(tagMap.values()).sort();
-          // Kombiniraj postojeće tagove s predefiniranim tagovima
-          const allSuggestedTags = Array.from(new Set([...COMMON_TAGS, ...uniqueTags])).sort();
-          setExistingTags(allSuggestedTags);
-        }
-      } catch (error) {
-        console.error("Error loading existing tags:", error);
-      }
-    }
-    loadExistingTags();
-  }, []);
-
-  // Zatvori dropdown kada se klikne izvan
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (showTagSuggestions && !target.closest('.tag-autocomplete-container')) {
-        setShowTagSuggestions(false);
-      }
-    };
-
-    if (showTagSuggestions) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [showTagSuggestions]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validacija: barem jedna kategorija mora biti odabrana
-    if (formData.category.length === 0) {
-      alert("Odaberi barem jednu kategoriju");
+    // Validacija: glavna slika mora biti uploadana
+    if (!formData.image) {
+      alert("Morate uploadati glavnu sliku");
       return;
     }
     
-    // Validacija: barem jedan tag mora biti dodan
-    if (formData.tags.length === 0) {
-      alert("Dodaj barem jedan tag");
+    // Validacija: barem jedna kategorija mora biti odabrana
+    if (formData.category.length === 0) {
+      alert("Odaberi barem jednu kategoriju");
       return;
     }
     
@@ -140,7 +158,7 @@ export default function NoviBlogPostPage() {
       submitData.append("excerpt", formData.excerpt);
       submitData.append("content", formData.content);
       submitData.append("author", "Ivica Drusany");
-      submitData.append("tags", JSON.stringify(formData.tags)); // Pošalji kao JSON array
+      submitData.append("tags", JSON.stringify([])); // Prazan array za backward compatibility
       submitData.append("category", JSON.stringify(formData.category)); // Pošalji kao JSON array
       submitData.append("createdAt", formData.createdAt);
 
@@ -164,6 +182,8 @@ export default function NoviBlogPostPage() {
       });
 
       if (response.ok) {
+        // Resetiraj stanje nesačuvanih promjena prije navigacije
+        setHasUnsavedChanges(false);
         router.push("/admin");
         router.refresh();
       } else {
@@ -181,23 +201,63 @@ export default function NoviBlogPostPage() {
   return (
     <div className="min-h-screen bg-gf-bg py-12 dark:bg-neutral-900">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <Link
-          href="/admin"
+        {/* Unsaved Changes Modal */}
+        {showUnsavedModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div 
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowUnsavedModal(false)}
+            />
+            <div className="relative z-10 w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-700 dark:bg-neutral-800">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                <svg className="h-6 w-6 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-gf-text-primary dark:text-neutral-100">
+                Nesačuvane promjene
+              </h3>
+              <p className="mb-6 text-gf-text-secondary dark:text-neutral-400">
+                Imate nesačuvane promjene. Jeste li sigurni da želite napustiti stranicu? Sve promjene će biti izgubljene.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowUnsavedModal(false)}
+                  className="flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-3 font-medium text-gf-text-primary transition-all hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600"
+                >
+                  Ostani na stranici
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmNavigation}
+                  className="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 font-medium text-white shadow-lg transition-all hover:shadow-xl"
+                >
+                  Napusti stranicu
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <button
+          type="button"
+          onClick={() => handleSafeNavigation("/admin")}
           className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-gf-cta hover:text-gf-cta-hover dark:text-gf-cta dark:hover:text-gf-cta-hover"
         >
           <ArrowLeft className="h-4 w-4" />
           Natrag na admin panel
-        </Link>
+        </button>
 
         <h1 className="mb-8 text-4xl font-bold text-gf-text-primary dark:text-neutral-100">
           Dodaj novi blog post
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Naslov */}
-          <div>
-            <label htmlFor="title" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Naslov *
+          {/* Naslov - istaknuti */}
+          <div className="rounded-xl border border-neutral-200 bg-gradient-to-r from-gf-cta/5 to-gf-safe/5 p-6 dark:border-neutral-700 dark:from-gf-cta/10 dark:to-gf-safe/10">
+            <label htmlFor="title" className="mb-3 block text-sm font-semibold uppercase tracking-wide text-gf-cta dark:text-gf-cta">
+              Naslov posta *
             </label>
             <input
               type="text"
@@ -205,14 +265,14 @@ export default function NoviBlogPostPage() {
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              placeholder="Unesi naslov blog posta"
+              className="w-full rounded-lg border-2 border-neutral-200 bg-white px-5 py-4 text-2xl font-bold text-gf-text-primary placeholder:text-neutral-400 focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
+              placeholder="Unesite privlačan naslov..."
             />
           </div>
 
-          {/* Kratki opis */}
-          <div>
-            <label htmlFor="excerpt" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
+          {/* Kratki opis - istaknuti */}
+          <div className="rounded-xl border border-neutral-200 bg-gradient-to-r from-gf-safe/5 to-gf-cta/5 p-6 dark:border-neutral-700 dark:from-gf-safe/10 dark:to-gf-cta/10">
+            <label htmlFor="excerpt" className="mb-3 block text-sm font-semibold uppercase tracking-wide text-gf-safe dark:text-gf-safe">
               Kratki opis (excerpt) *
             </label>
             <textarea
@@ -221,9 +281,12 @@ export default function NoviBlogPostPage() {
               rows={3}
               value={formData.excerpt}
               onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              placeholder="Kratki opis koji će se prikazati na listi blog postova"
+              className="w-full rounded-lg border-2 border-neutral-200 bg-white px-5 py-4 text-lg text-gf-text-primary placeholder:text-neutral-400 focus:border-gf-safe focus:outline-none focus:ring-2 focus:ring-gf-safe/20 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
+              placeholder="Kratak, privlačan opis koji će privući čitatelje..."
             />
+            <p className="mt-2 text-xs text-gf-text-secondary dark:text-neutral-400">
+              Ovaj tekst se prikazuje na listi blogova i u Google rezultatima
+            </p>
           </div>
 
           {/* Sadržaj */}
@@ -257,8 +320,8 @@ export default function NoviBlogPostPage() {
               <input
                 type="file"
                 id="image"
+                name="image"
                 accept="image/*"
-                required
                 onChange={handleImageChange}
                 className="hidden"
               />
@@ -272,6 +335,9 @@ export default function NoviBlogPostPage() {
                 </div>
               )}
             </div>
+            {!formData.image && (
+              <p className="mt-2 text-xs text-gf-risk">Morate uploadati glavnu sliku</p>
+            )}
           </div>
 
           {/* Galerija slika */}
@@ -358,133 +424,6 @@ export default function NoviBlogPostPage() {
             {formData.category.length === 0 && (
               <p className="mt-2 text-xs text-gf-risk">Odaberi barem jednu kategoriju</p>
             )}
-          </div>
-
-          {/* Tagovi */}
-          <div>
-            <label htmlFor="newTagInput" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Tagovi * (pritisni Enter ili Dodaj)
-            </label>
-            <div className="space-y-3">
-              {/* Input za dodavanje novog taga */}
-              <div className="relative flex gap-2">
-                <div className="relative flex-1 tag-autocomplete-container">
-                  <input
-                    type="text"
-                    id="newTagInput"
-                    value={newTag}
-                    onChange={(e) => {
-                      setNewTag(e.target.value);
-                      setShowTagSuggestions(e.target.value.length > 0);
-                    }}
-                    onFocus={() => {
-                      if (newTag.length > 0) {
-                        setShowTagSuggestions(true);
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-                          setFormData({
-                            ...formData,
-                            tags: [...formData.tags, newTag.trim()],
-                          });
-                        }
-                        setNewTag("");
-                        setShowTagSuggestions(false);
-                      } else if (e.key === "Escape") {
-                        setShowTagSuggestions(false);
-                      }
-                    }}
-                    className="flex-1 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                    placeholder="Dodaj novi tag..."
-                  />
-                  
-                  {/* Autocomplete dropdown */}
-                  {showTagSuggestions && newTag.length > 0 && (
-                    <div className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
-                      {existingTags
-                        .filter((tag) => 
-                          tag.toLowerCase().includes(newTag.toLowerCase()) &&
-                          !formData.tags.map(t => t.toLowerCase()).includes(tag.toLowerCase())
-                        )
-                        .slice(0, 10)
-                        .map((tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => {
-                              if (!formData.tags.includes(tag)) {
-                                setFormData({
-                                  ...formData,
-                                  tags: [...formData.tags, tag],
-                                });
-                              }
-                              setNewTag("");
-                              setShowTagSuggestions(false);
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm text-gf-text-primary hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                          >
-                            {tag}
-                          </button>
-                        ))}
-                      {existingTags.filter((tag) => 
-                        tag.toLowerCase().includes(newTag.toLowerCase()) &&
-                        !formData.tags.map(t => t.toLowerCase()).includes(tag.toLowerCase())
-                      ).length === 0 && (
-                        <div className="px-4 py-2 text-sm text-gf-text-secondary dark:text-neutral-400">
-                          Nema predloženih tagova
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-                      setFormData({
-                        ...formData,
-                        tags: [...formData.tags, newTag.trim()],
-                      });
-                    }
-                    setNewTag("");
-                    setShowTagSuggestions(false);
-                  }}
-                  className="rounded-lg bg-gf-cta px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-gf-cta-hover"
-                >
-                  Dodaj
-                </button>
-              </div>
-              
-              {/* Prikaz tagova kao pills */}
-              <div className="flex flex-wrap gap-2">
-                {formData.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-gf-safe/20 px-3 py-1 text-sm font-medium text-gf-safe dark:bg-gf-safe/30 dark:text-gf-safe"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData({
-                          ...formData,
-                          tags: formData.tags.filter((t) => t !== tag),
-                        });
-                      }}
-                      className="ml-1 text-gf-safe/80 hover:text-gf-safe"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              {formData.tags.length === 0 && (
-                <p className="mt-2 text-xs text-gf-risk">Dodaj barem jedan tag</p>
-              )}
-            </div>
           </div>
 
               {/* Datum */}

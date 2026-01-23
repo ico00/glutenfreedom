@@ -1,17 +1,34 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
-import { mockProducts, mockStores } from "@/data/mockData";
-import { Search, CheckCircle } from "lucide-react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { mockProducts } from "@/data/mockData";
+import { Search, CheckCircle, ChevronDown, Check, ShoppingBag, Wheat, ChefHat, Cookie, Coffee, Package, UtensilsCrossed, MoreHorizontal } from "lucide-react";
 import { Product } from "@/types";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import { PRODUCT_CATEGORIES } from "@/lib/constants";
+
+// Mapiranje kategorija proizvoda na ikone
+const productCategoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  "sve": ShoppingBag,
+  "brašno": Wheat,
+  "tjestenine": ChefHat,
+  "pekara": Cookie,
+  "slatkiši": Cookie,
+  "snack": Package,
+  "pića": Coffee,
+  "konzerve": Package,
+  "začini": UtensilsCrossed,
+  "ostalo": MoreHorizontal,
+};
 
 export default function ProizvodiPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("sve");
   const [allProducts, setAllProducts] = useState<Product[]>(mockProducts);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadProducts() {
@@ -30,7 +47,35 @@ export default function ProizvodiPage() {
     loadProducts();
   }, []);
 
-  const categories = ["sve", ...Array.from(new Set(allProducts.map((p) => p.category)))];
+  // Zatvori dropdown kada se klikne izvan ili pritisne Escape
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isCategoryOpen) {
+        setIsCategoryOpen(false);
+      }
+    };
+
+    if (isCategoryOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keydown", handleEscape);
+      };
+    }
+  }, [isCategoryOpen]);
+
+  // Koristi statički definirane kategorije umjesto dinamičkih iz proizvoda
+  const categories = ["sve", ...PRODUCT_CATEGORIES];
+  
+  const selectedCategoryLabel = selectedCategory === "sve" ? "Sve kategorije" : selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1);
+  const SelectedCategoryIcon = productCategoryIcons[selectedCategory] || ShoppingBag;
 
   const filteredProducts = useMemo(() => {
     return allProducts.filter((product) => {
@@ -40,7 +85,8 @@ export default function ProizvodiPage() {
         product.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchesCategory = selectedCategory === "sve" || product.category === selectedCategory;
+      const matchesCategory = selectedCategory === "sve" || 
+        product.category.toLowerCase() === selectedCategory.toLowerCase();
 
       return matchesSearch && matchesCategory;
     });
@@ -54,7 +100,7 @@ export default function ProizvodiPage() {
             Proizvodi bez glutena
           </h1>
           <p className="mt-4 text-lg text-gf-text-secondary dark:text-neutral-400">
-            Pronađite proizvode i dućane s bezglutenskim artiklima
+            Pronađite bezglutenske proizvode za svakodnevnu prehranu
           </p>
         </div>
 
@@ -70,17 +116,63 @@ export default function ProizvodiPage() {
               className="w-full rounded-lg border border-neutral-300 bg-gf-bg-card py-3 pl-10 pr-4 text-gf-text-primary placeholder-gf-text-muted focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-400"
             />
           </div>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-lg border border-neutral-300 bg-gf-bg-card px-4 py-2 text-sm text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-          >
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              </option>
-            ))}
-          </select>
+          
+          {/* Custom Category Dropdown */}
+          <div ref={categoryRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+              className="flex w-full items-center justify-between rounded-lg border border-neutral-300 bg-gf-bg-card px-4 py-3 text-sm font-medium text-gf-text-primary transition-all hover:border-gf-cta hover:bg-gf-bg-soft focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
+            >
+              <div className="flex items-center gap-2">
+                <SelectedCategoryIcon className="h-4 w-4 text-gf-cta" />
+                <span>{selectedCategoryLabel}</span>
+              </div>
+              <ChevronDown 
+                className={`h-4 w-4 text-gf-text-muted transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} 
+              />
+            </button>
+
+            <AnimatePresence>
+              {isCategoryOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800"
+                >
+                  {categories.map((category) => {
+                    const Icon = productCategoryIcons[category] || ShoppingBag;
+                    const isSelected = selectedCategory === category;
+                    const label = category === "sve" ? "Sve kategorije" : category.charAt(0).toUpperCase() + category.slice(1);
+                    
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(category);
+                          setIsCategoryOpen(false);
+                        }}
+                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors ${
+                          isSelected
+                            ? "bg-gf-cta/10 text-gf-cta dark:bg-gf-cta/20"
+                            : "text-gf-text-primary hover:bg-gf-bg-soft dark:text-neutral-300 dark:hover:bg-neutral-700"
+                        }`}
+                      >
+                        <Icon className={`h-4 w-4 ${isSelected ? 'text-gf-cta' : 'text-gf-text-muted'}`} />
+                        <span className="flex-1">{label}</span>
+                        {isSelected && (
+                          <Check className="h-4 w-4 text-gf-cta" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Products Grid */}
@@ -168,70 +260,6 @@ export default function ProizvodiPage() {
           </div>
         )}
 
-        {/* Stores Section */}
-        <div className="mt-16">
-          <h2 className="mb-8 text-3xl font-bold text-gf-text-primary dark:text-neutral-100">
-            Dućani s bezglutenskim proizvodima
-          </h2>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {mockStores.map((store, index) => (
-              <motion.article
-                key={store.id}
-                initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
-                whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
-                className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-gf-bg-card shadow-lg transition-all hover:border-gf-cta/30 hover:shadow-2xl dark:border-neutral-800 dark:bg-neutral-800"
-              >
-                {store.image && (
-                  <div className="relative aspect-video w-full overflow-hidden">
-                    <ImagePlaceholder
-                      imageUrl={store.image}
-                      alt={store.name}
-                      emoji="🏪"
-                      gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
-                    />
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"
-                    />
-                  </div>
-                )}
-                <div className="p-6">
-                  <h3 className="mb-2 text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
-                    {store.name}
-                  </h3>
-                  <p className="mb-4 line-clamp-2 text-gf-text-secondary dark:text-neutral-400">
-                    {store.description}
-                  </p>
-                  <div className="mb-4 flex items-center gap-2 text-sm text-gf-text-muted dark:text-neutral-400">
-                    <span>{store.address}</span>
-                  </div>
-                  {store.website && (
-                    <p className="inline-flex items-center gap-2 text-sm font-medium text-gf-cta transition-all group-hover:text-gf-cta-hover dark:text-gf-cta dark:group-hover:text-gf-cta-hover">
-                      <a
-                        href={store.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2"
-                      >
-                        Posjeti web stranicu
-                        <motion.span
-                          className="inline-block"
-                          animate={{ x: [0, 4, 0] }}
-                          transition={{ duration: 1.5, repeat: Infinity, delay: index * 0.2 }}
-                        >
-                          →
-                        </motion.span>
-                      </a>
-                    </p>
-                  )}
-                </div>
-              </motion.article>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

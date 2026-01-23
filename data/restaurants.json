@@ -43,5 +43,15 @@
     "website": "https://glovoapp.com/hr/hr/zagreb/stores/frankos-gluten-free-zag",
     "cuisine": [],
     "image": "/images/restaurants/28d220a1-acdf-4a26-b30d-4c18c3fa913e-69dab86e5bc651e74a89fdc45d193d7d7f27d3b4cee6ac3b2c5d8bd1893cb3c3.png"
+  },
+  {
+    "id": "400da468-feaf-45f9-aeb7-8b214237fde0",
+    "name": "Vis à Vis by Vincek",
+    "description": "Pored \"normalnog\" Vinceka, u Tomićevoj se nalazi i onaj bez glutena",
+    "address": "Tomićeva 2, Zagreb",
+    "phone": "01/4831-551",
+    "website": "https://www.vincek.com.hr/Slasticarnice/Tomiceva/",
+    "cuisine": [],
+    "image": "/images/restaurants/400da468-feaf-45f9-aeb7-8b214237fde0-1768573647186-q3aa8z4-Unknown-2.jpg"
   }
 ]

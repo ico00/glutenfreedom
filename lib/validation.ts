@@ -9,7 +9,7 @@ export const blogPostSchema = z.object({
   title: z.string().min(3, "Naslov mora imati najmanje 3 znaka").max(200, "Naslov je predugačak"),
   excerpt: z.string().min(10, "Kratki opis mora imati najmanje 10 znakova").max(500, "Kratki opis je predugačak"),
   content: z.string().min(50, "Sadržaj mora imati najmanje 50 znakova"),
-  tags: z.array(z.string().min(1).max(50)).min(1, "Dodaj barem jedan tag"),
+  tags: z.array(z.string().min(1).max(50)), // Dozvoli prazan array (tagovi su uklonjeni iz sustava)
   category: z.union([
     z.string().min(1),
     z.array(z.string().min(1)).min(1, "Odaberi barem jednu kategoriju"),
@@ -26,7 +26,6 @@ export const recipeSchema = z.object({
   servings: z.number().int().min(1).max(100),
   difficulty: z.enum(["lako", "srednje", "teško"]),
   category: z.string().min(1),
-  tags: z.array(z.string().min(1).max(50)),
   ingredients: z.array(z.string().min(1)).min(1, "Dodaj barem jedan sastojak"),
   instructions: z.array(z.string().min(1)).min(1, "Dodaj barem jedan korak"),
 });
@@ -44,7 +43,7 @@ export const restaurantSchema = z.object({
   facebook: z.string().url("Neispravan URL").max(500).optional().or(z.literal("")),
   instagram: z.string().url("Neispravan URL").max(500).optional().or(z.literal("")),
   tiktok: z.string().url("Neispravan URL").max(500).optional().or(z.literal("")),
-  cuisine: z.array(z.string().min(1)).min(1, "Odaberi barem jednu kuhinju"),
+  cuisine: z.array(z.string()).optional(), // Opcionalno za backward compatibility
 });
 
 // Product validation

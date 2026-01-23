@@ -505,8 +505,16 @@ export default function AdminPage() {
                   {restaurants.map((restaurant) => (
                     <div
                       key={restaurant.id}
-                      className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"
+                      className="flex items-center gap-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800"
                     >
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+                        <ImagePlaceholder
+                          imageUrl={restaurant.image}
+                          alt={restaurant.name}
+                          emoji="🍽️"
+                          gradient="from-gf-cta/40 via-gf-safe/30 to-gf-cta/40"
+                        />
+                      </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-gf-text-primary dark:text-neutral-100">
                           {restaurant.name}
@@ -516,12 +524,6 @@ export default function AdminPage() {
                         </p>
                         <div className="mt-2 flex gap-2 text-xs text-gf-text-muted dark:text-neutral-500">
                           <span>Adresa: {Array.isArray(restaurant.address) ? restaurant.address.join(", ") : restaurant.address}</span>
-                          {restaurant.cuisine && restaurant.cuisine.length > 0 && (
-                            <>
-                              <span>•</span>
-                              <span>Kuhinja: {restaurant.cuisine.join(", ")}</span>
-                            </>
-                          )}
                           {restaurant.phone && (
                             <>
                               <span>•</span>

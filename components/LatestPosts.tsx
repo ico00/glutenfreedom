@@ -72,10 +72,11 @@ export function LatestPosts() {
             <Sparkles className="h-5 w-5 text-gf-safe" />
           </motion.div>
           <h2 className="text-4xl font-bold text-gf-text-primary dark:text-neutral-100">
-            Najnoviji savjeti
+          You are unwise to lower your defenses!
+          
           </h2>
           <p className="mt-4 text-lg text-gf-text-secondary dark:text-neutral-400">
-            Edukativni članci o celijakiji i bezglutenskoj prehrani
+          Gluten čeka tvoju grešku. Ovdje učiš kako je izbjeći.
           </p>
         </motion.div>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
