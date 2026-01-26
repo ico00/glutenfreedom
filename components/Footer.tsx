@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer className="border-t border-neutral-300 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3 md:justify-items-center">
           <div>
             <h3 className="text-lg font-bold text-gf-text-primary dark:text-neutral-100">
               Bezglutenska sila
@@ -66,14 +66,6 @@ export function Footer() {
                 </Link>
               </li>
             </ul>
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold text-gf-text-primary dark:text-neutral-100">
-              Praćenje
-            </h4>
-            <p className="mt-2 text-sm text-gf-text-secondary dark:text-neutral-400">
-              Pratite nas za najnovije savjete i recepte
-            </p>
           </div>
         </div>
         <div className="mt-8 border-t border-neutral-200 pt-8 dark:border-neutral-800">

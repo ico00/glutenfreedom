@@ -57,10 +57,10 @@ export function FeaturedRecipes() {
             <Sparkles className="h-5 w-5 text-gf-safe" />
           </motion.div>
           <h2 className="text-4xl font-bold text-gf-text-primary dark:text-neutral-100">
-            Izdvojeni recepti
+          Be careful not to choke on your aspirations
           </h2>
           <p className="mt-4 text-lg text-gf-text-secondary dark:text-neutral-400">
-            Ukusni bezglutenski recepti za svaki dan
+            Jednostavni bezglutenski recepti za koliko toliko jestivu hranu
           </p>
         </motion.div>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">

@@ -142,10 +142,11 @@ export default function ReceptiPage() {
             <ChefHat className="h-8 w-8 text-gf-cta" />
           </motion.div>
           <h1 className="text-4xl font-bold text-gf-text-primary dark:text-neutral-100">
-            Bezglutenski recepti
+          Be careful not to choke on your aspirations
+
           </h1>
           <p className="mt-4 text-lg text-gf-text-secondary dark:text-neutral-400">
-            Pronađite savršen recept za svaki dan
+          Jednostavni bezglutenski recepti za koliko toliko jestivu hranu
           </p>
         </motion.div>
 

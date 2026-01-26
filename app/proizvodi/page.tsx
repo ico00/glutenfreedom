@@ -82,8 +82,7 @@ export default function ProizvodiPage() {
       const matchesSearch =
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        product.brand.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesCategory = selectedCategory === "sve" || 
         product.category.toLowerCase() === selectedCategory.toLowerCase();
@@ -100,8 +99,21 @@ export default function ProizvodiPage() {
             Proizvodi bez glutena
           </h1>
           <p className="mt-4 text-lg text-gf-text-secondary dark:text-neutral-400">
-            Pronađite bezglutenske proizvode za svakodnevnu prehranu
+            Neki od proizvoda koje redovno kupujem. Neki su službeno bez glutena, a drugi nemaju navedeno ništa opasno na deklaraciji.
           </p>
+          <div className="mx-auto mt-6 max-w-2xl rounded-xl border-2 border-gf-cta/30 bg-gf-cta/10 p-4 dark:bg-gf-cta/20">
+            <p className="text-base font-medium text-gf-text-primary dark:text-neutral-100">
+              Za registar bezglutenskih proizvoda udruge CeliVita, kliknite{" "}
+              <a 
+                href="https://bezglutena.celivita.hr/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="font-bold text-gf-cta underline hover:text-gf-cta-hover"
+              >
+                ovdje
+              </a>.
+            </p>
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -223,20 +235,6 @@ export default function ProizvodiPage() {
                   <p className="mb-4 line-clamp-2 text-gf-text-secondary dark:text-neutral-400">
                     {product.description}
                   </p>
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {product.tags.filter(tag => tag.trim()).map((tag, tagIndex) => (
-                      <motion.span
-                        key={tag}
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.1 + tagIndex * 0.1 + 0.3 }}
-                        whileHover={{ scale: 1.1 }}
-                        className="cursor-default rounded-full bg-gf-safe/20 px-3 py-1 text-xs font-medium text-gf-safe transition-colors hover:bg-gf-safe/30 dark:bg-gf-safe/30 dark:text-gf-safe"
-                      >
-                        {tag}
-                      </motion.span>
-                    ))}
-                  </div>
                   {product.store && (
                     <p className="text-sm text-gf-text-muted dark:text-neutral-400">
                       Dostupno u: {product.store}

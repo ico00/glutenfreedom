@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { HelpCircle, CheckCircle, XCircle, RotateCcw } from "lucide-react";
+import Image from "next/image";
 
 interface Question {
   question: string;
@@ -111,7 +112,7 @@ export function CeliacQuiz() {
           <div className="mb-4 inline-flex items-center gap-2">
             <HelpCircle className="h-6 w-6 text-gf-cta" />
             <h2 className="text-3xl font-bold text-gf-text-primary dark:text-neutral-100">
-              Kviz o celijakiji
+              Your strength has returned but the weakness still remains. 
             </h2>
           </div>
           <p className="text-gf-text-secondary dark:text-neutral-400">
@@ -155,7 +156,15 @@ export function CeliacQuiz() {
                     style={{ willChange: "transform" }}
                   >
                     <div className="text-4xl whitespace-nowrap">
-                      {position < -2 ? "🚽" : position > 2 ? "😊" : "🤔"}
+                      {position < -2 ? "🚽" : position > 2 ? "😊" : (
+                        <Image
+                          src="/images/logo.png"
+                          alt="Bezglutenska sila"
+                          width={48}
+                          height={48}
+                          className="inline-block"
+                        />
+                      )}
                     </div>
                   </motion.div>
                 ) : (
@@ -248,12 +257,12 @@ export function CeliacQuiz() {
               >
                 <h3 className="text-2xl font-semibold text-gf-text-primary mb-4 dark:text-neutral-100">
                   {position <= -3 
-                    ? "Možda trebaš malo više pročitati o celijakiji!" 
-                    : "Odlično! Dobro poznaješ celijakiju!"}
+                    ? "Don't fail me again, admiral!" 
+                    : "Obi-Wan has taught you well!"}
                 </h3>
                 <p className="text-gf-text-secondary dark:text-neutral-400 mb-6">
                   {position <= -3
-                    ? "Pogledaj naše blog postove i saznaj više o celijakiji!"
+                    ? "Prolistaj malo ovaj blog, pričaj s ljudima i saznaj više o celijakiji!"
                     : "Nastavi učiti i dijeliti znanje s drugima!"}
                 </p>
                 <motion.button

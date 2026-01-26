@@ -198,14 +198,16 @@ export default function DucaniPage() {
             className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
           >
             <AnimatePresence mode="popLayout">
-              {filteredStores.map((store) => (
-                <motion.div
+              {filteredStores.map((store, index) => (
+                <motion.article
                   key={store.id}
                   layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition-all hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-800"
+                  transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+                  whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
+                  className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-gf-bg-card shadow-lg transition-all hover:border-gf-cta/30 hover:shadow-2xl dark:border-neutral-800 dark:bg-neutral-800"
                 >
                   {/* Image */}
                   <div className="relative h-48 overflow-hidden bg-neutral-100 dark:bg-neutral-700">
@@ -214,14 +216,19 @@ export default function DucaniPage() {
                         src={store.image}
                         alt={store.name}
                         fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="object-cover transition-transform duration-300 group-hover:scale-110"
                       />
                     ) : (
                       <ImagePlaceholder type="store" />
                     )}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1 }}
+                      className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"
+                    />
                     {/* Type Badge */}
                     <div className="absolute right-3 top-3">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${getTypeColor(store.type)}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium shadow-md ${getTypeColor(store.type)}`}>
                         {store.type === "online" && <Globe className="h-3.5 w-3.5" />}
                         {store.type === "dućan" && <MapPin className="h-3.5 w-3.5" />}
                         {store.type === "oboje" && <ShoppingCart className="h-3.5 w-3.5" />}
@@ -231,8 +238,8 @@ export default function DucaniPage() {
                   </div>
 
                   {/* Content */}
-                  <div className="p-5">
-                    <h3 className="mb-2 text-lg font-semibold text-gf-text-primary dark:text-neutral-100">
+                  <div className="p-6">
+                    <h3 className="mb-2 text-xl font-semibold text-gf-text-primary transition-colors group-hover:text-gf-cta dark:text-neutral-100 dark:group-hover:text-gf-cta">
                       {store.name}
                     </h3>
                     <p className="mb-4 line-clamp-2 text-sm text-gf-text-secondary dark:text-neutral-400">
@@ -248,27 +255,31 @@ export default function DucaniPage() {
                       {store.phone && (
                         <div className="flex items-center gap-2 text-gf-text-secondary dark:text-neutral-400">
                           <Phone className="h-4 w-4 flex-shrink-0" />
-                          <a href={`tel:${store.phone}`} className="hover:text-gf-cta">
+                          <a href={`tel:${store.phone}`} className="transition-colors hover:text-gf-cta">
                             {store.phone}
                           </a>
                         </div>
                       )}
                       {store.website && (
-                        <div className="flex items-center gap-2">
-                          <ExternalLink className="h-4 w-4 flex-shrink-0 text-gf-text-secondary dark:text-neutral-400" />
+                        <motion.div 
+                          className="flex items-center gap-2 pt-2"
+                          whileHover={{ x: 4 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <ExternalLink className="h-4 w-4 flex-shrink-0 text-gf-cta" />
                           <a
                             href={store.website}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-gf-cta hover:underline"
+                            className="font-medium text-gf-cta transition-colors hover:text-gf-cta-hover"
                           >
-                            Posjeti web stranicu
+                            Posjeti web stranicu →
                           </a>
-                        </div>
+                        </motion.div>
                       )}
                     </div>
                   </div>
-                </motion.div>
+                </motion.article>
               ))}
             </AnimatePresence>
           </motion.div>

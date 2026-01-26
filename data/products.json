@@ -23,14 +23,14 @@
     "brand": "Alnavit",
     "category": "slatkiši",
     "tags": [
-      "slatkiši",
-      ""
+      "slatkiši"
     ],
     "certified": true,
     "store": "Bio Planet",
     "weight": 140,
-    "image": "/images/products/1-Bio_Dominosteine_Alnavit_glutenfrei.jpg",
-    "price": 5.5
+    "image": "/images/products/1-1769434056793-mk4d24d-dominos.png",
+    "price": 5.5,
+    "weightUnit": "g"
   },
   {
     "id": "89ad3ce3-13ae-4328-8ae8-21010decd0f5",

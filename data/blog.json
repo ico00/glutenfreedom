@@ -3,15 +3,16 @@
     "id": "251221-dijagnoza",
     "title": "Dijagnoza",
     "excerpt": "Moja agonija počela je 2015., dakle sada već prije 10 godina",
-    "image": "/images/blog/251221-dijagnoza-Gemini_Generated_Image_4dme6b4dme6b4dme.png",
+    "image": "/images/blog/251221-dijagnoza-1769433511069-jnb381s-_MG_8434.jpg",
     "gallery": [],
     "author": "Ivica Drusany",
-    "tags": [
-      "iskustvo",
-      "početak",
-      "dijagnoza"
+    "tags": [],
+    "category": [
+      "iskustva",
+      "Iskustva",
+      "Savjeti",
+      "Zdravlje"
     ],
-    "category": "iskustva",
     "readTime": 3,
     "createdAt": "2025-12-21"
   },
@@ -34,14 +35,10 @@
     "id": "260102-kontaminacija-glutenom",
     "title": "Kontaminacija glutenom",
     "excerpt": "Ovo diže tlak još više od samog glutena. Kakva mrtva kontaminacija? Pa glutenom. A to može biti u hrani, prostoru oko vas, svugdje. I može biti neugodno zato se izbjegava u širokom luku. Što ste bolesniji, to je luk širi.",
-    "image": "/images/blog/260102-kontaminacija-glutenom-kontaminacija.jpg",
+    "image": "/images/blog/260102-kontaminacija-glutenom-1769433849966-c40606w-_MG_8446.jpg",
     "gallery": [],
     "author": "Ivica Drusany",
-    "tags": [
-      "savjeti",
-      "kontaminacija",
-      "čišćenje"
-    ],
+    "tags": [],
     "category": [
       "Iskustva",
       "Savjeti"
@@ -91,5 +88,20 @@
     ],
     "readTime": 2,
     "createdAt": "2026-01-03"
+  },
+  {
+    "id": "260125-lijekovi",
+    "title": "Lijekovi",
+    "excerpt": "Ideš popiti nešto da ti bude bolje, a bude ti još gore. Zašto? (Drumroll..) Pa i lijekovi mogu biti kontaminirani glutenom.",
+    "image": "/images/blog/260125-lijekovi-1769425401327-nx8aczz-_MG_8361.jpg",
+    "gallery": [],
+    "author": "Ivica Drusany",
+    "tags": [],
+    "category": [
+      "Iskustva",
+      "Zdravlje"
+    ],
+    "readTime": 1,
+    "createdAt": "2026-01-25"
   }
 ]

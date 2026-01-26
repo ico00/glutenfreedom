@@ -69,7 +69,7 @@ export function RestaurantsPreview() {
             <Sparkles className="h-5 w-5 text-gf-safe" />
           </motion.div>
           <h2 className="text-4xl font-bold text-gf-text-primary dark:text-neutral-100">
-            Restorani u Zagrebu
+          We would be honored if you would join us.
           </h2>
           <p className="mt-4 text-lg text-gf-text-secondary dark:text-neutral-400">
             Pronađite restorane s bezglutenskim opcijama
