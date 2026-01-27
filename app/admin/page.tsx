@@ -346,7 +346,7 @@ export default function AdminPage() {
                 <p className="text-gf-text-secondary dark:text-neutral-400">Učitavanje...</p>
               ) : recipes.length === 0 ? (
                 <p className="text-gf-text-secondary dark:text-neutral-400">
-                  Nema recepata. Klikni na "Dodaj novi recept" da kreneš.
+                  Nema recepata. Klikni na &quot;Dodaj novi recept&quot; da kreneš.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -426,7 +426,7 @@ export default function AdminPage() {
                 <p className="text-gf-text-secondary dark:text-neutral-400">Učitavanje...</p>
               ) : blogPosts.length === 0 ? (
                 <p className="text-gf-text-secondary dark:text-neutral-400">
-                  Nema blog postova. Klikni na "Dodaj novi post" da kreneš.
+                  Nema blog postova. Klikni na &quot;Dodaj novi post&quot; da kreneš.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -498,7 +498,7 @@ export default function AdminPage() {
                 <p className="text-gf-text-secondary dark:text-neutral-400">Učitavanje...</p>
               ) : restaurants.length === 0 ? (
                 <p className="text-gf-text-secondary dark:text-neutral-400">
-                  Nema restorana. Klikni na "Dodaj novi restoran" da kreneš.
+                  Nema restorana. Klikni na &quot;Dodaj novi restoran&quot; da kreneš.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -572,7 +572,7 @@ export default function AdminPage() {
                 <p className="text-gf-text-secondary dark:text-neutral-400">Učitavanje...</p>
               ) : products.length === 0 ? (
                 <p className="text-gf-text-secondary dark:text-neutral-400">
-                  Nema proizvoda. Klikni na "Dodaj novi proizvod" da kreneš.
+                  Nema proizvoda. Klikni na &quot;Dodaj novi proizvod&quot; da kreneš.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -654,7 +654,7 @@ export default function AdminPage() {
                 <p className="text-gf-text-secondary dark:text-neutral-400">Učitavanje...</p>
               ) : stores.length === 0 ? (
                 <p className="text-gf-text-secondary dark:text-neutral-400">
-                  Nema dućana. Klikni na "Dodaj novi dućan" da kreneš.
+                  Nema dućana. Klikni na &quot;Dodaj novi dućan&quot; da kreneš.
                 </p>
               ) : (
                 <div className="space-y-4">
