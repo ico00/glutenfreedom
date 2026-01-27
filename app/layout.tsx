@@ -5,6 +5,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { SessionProviderWrapper } from "@/components/SessionProviderWrapper";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { generateOrganizationSchema, generateWebSiteSchema, generateJsonLdScript } from "@/lib/seo";
 
@@ -77,13 +78,15 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: generateJsonLdScript(websiteSchema) }}
         />
         <ErrorBoundary>
-          <ThemeProvider>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
-          </ThemeProvider>
+          <SessionProviderWrapper>
+            <ThemeProvider>
+              <div className="flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+            </ThemeProvider>
+          </SessionProviderWrapper>
         </ErrorBoundary>
       </body>
     </html>

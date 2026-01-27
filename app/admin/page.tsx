@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { 
   ChefHat, 
@@ -20,6 +21,7 @@ import { getCsrfToken } from "@/lib/csrfClient";
 
 export default function AdminPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [activeTab, setActiveTab] = useState<"recipes" | "blog" | "restaurants" | "products" | "stores">("recipes");
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -27,6 +29,30 @@ export default function AdminPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Provjeri autentifikaciju
+  useEffect(() => {
+    if (status === "loading") return; // Čekaj dok se ne učita session
+    
+    if (status === "unauthenticated" || !session) {
+      router.push("/login?callbackUrl=/admin");
+    }
+  }, [session, status, router]);
+
+  // Ne renderiraj stranicu dok se ne provjeri autentifikacija
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gf-bg py-12 dark:bg-neutral-900">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <p className="text-gf-text-primary dark:text-neutral-100">Provjeravanje autentifikacije...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated" || !session) {
+    return null; // Redirect će se izvršiti u useEffect
+  }
 
   // Učitaj podatke kada se tab promijeni
   useEffect(() => {
