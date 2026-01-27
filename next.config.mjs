@@ -11,10 +11,9 @@ const nextConfig = {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    // Ensure images are accessible in production
-    unoptimized: process.env.NODE_ENV === "production" ? false : false,
-    // Allow loading from same origin
-    remotePatterns: [],
+    // Disable image optimization for Fly.io (causes 400 errors)
+    // Images will be served directly from public folder
+    unoptimized: true,
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
