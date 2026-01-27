@@ -64,7 +64,7 @@ export default function EditReceptPage() {
           setNewGalleryPreviews([]);
           
           // Ako kategorija nije u predefiniranoj listi, dodaj je privremeno
-          if (recipe.category && !RECIPE_CATEGORIES.includes(recipe.category)) {
+          if (recipe.category && !(RECIPE_CATEGORIES as readonly string[]).includes(recipe.category)) {
             // Kategorija će biti prikazana u dropdown-u jer je value postavljen
             // Ali možemo je dodati u listu ako želimo
           }
