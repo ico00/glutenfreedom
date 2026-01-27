@@ -1,5 +1,4 @@
 import DOMPurify from "isomorphic-dompurify";
-import { File } from "buffer";
 import { fileTypeFromBuffer } from "file-type";
 
 // Validni MIME tipovi za slike

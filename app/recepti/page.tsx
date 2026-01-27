@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Users, Search, ChefHat, ChevronDown, Check, Bread, IceCream, Utensils, Salad, Pizza, Cake, Zap, Home, Jar, Coffee, MoreHorizontal, TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { Clock, Users, Search, ChefHat, ChevronDown, Check, Croissant, IceCream, Utensils, Salad, Pizza, Cake, Zap, Home, Cookie, Coffee, MoreHorizontal, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import type { Recipe } from "@/types";
 import { RECIPE_CATEGORIES } from "@/lib/constants";
@@ -11,7 +11,7 @@ import { RECIPE_CATEGORIES } from "@/lib/constants";
 // Mapiranje kategorija recepta na ikone
 const recipeCategoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "sve": ChefHat,
-  "Pekara": Bread,
+  "Pekara": Croissant,
   "Deserti": IceCream,
   "Glavna jela": Utensils,
   "Predjela": Salad,
@@ -20,7 +20,7 @@ const recipeCategoryIcons: Record<string, React.ComponentType<{ className?: stri
   "Torte i kolači": Cake,
   "Brza hrana": Zap,
   "Domaća jela": Home,
-  "Zimnica": Jar,
+  "Zimnica": Cookie,
   "Napitci": Coffee,
   "Ostalo": MoreHorizontal,
 };

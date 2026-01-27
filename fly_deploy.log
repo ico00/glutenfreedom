@@ -1,0 +1,387 @@
+==> Verifying app config
+Validating /Users/icom4/Desktop/GlutenFreedom/fly.toml
+[32m✓[0m Configuration is valid
+--> Verified app config
+==> Building image
+Waiting for depot builder...
+
+==> Building image with Depot
+--> build:  (​)
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 67B 0.2s
+#1 transferring dockerfile: 1.09kB 0.4s done
+#1 DONE 0.4s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.2s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6
+#3 resolve docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6 done
+#3 CACHED
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.09kB 0.4s done
+#1 DONE 0.4s
+
+#4 [internal] load build definition from Dockerfile
+#4 Deduplicating step ID [internal] load build definition from Dockerfile, another build is calculating it done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/node:22.15.0-slim
+#5 DONE 0.2s
+
+#6 [internal] load .dockerignore
+#6 transferring context:
+#6 transferring context: 495B 0.4s done
+#6 DONE 0.4s
+
+#7 [base 1/2] FROM docker.io/library/node:22.15.0-slim@sha256:557e52a0fcb928ee113df7e1fb5d4f60c1341dbda53f55e3d815ca10807efdce
+#7 resolve docker.io/library/node:22.15.0-slim@sha256:557e52a0fcb928ee113df7e1fb5d4f60c1341dbda53f55e3d815ca10807efdce done
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 210.27kB 0.7s done
+#8 DONE 0.8s
+
+#9 [build 2/6] COPY package-lock.json package.json ./
+#9 CACHED
+
+#10 [base 2/2] WORKDIR /app
+#10 CACHED
+
+#11 [build 1/6] RUN apt-get update -qq &&     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
+#11 CACHED
+
+#12 [build 3/6] RUN npm ci --include=dev
+#12 CACHED
+
+#13 [build 4/6] COPY . .
+#13 DONE 0.4s
+
+#14 [build 5/6] RUN npx next build
+#14 1.265 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#14 1.265 This information is used to shape Next.js' roadmap and prioritize features.
+#14 1.265 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#14 1.265 https://nextjs.org/telemetry
+#14 1.265 
+#14 1.341   ▲ Next.js 14.2.35
+#14 1.341 
+#14 1.444    Creating an optimized production build ...
+#14 14.88 <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (128kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+#14 21.56  ⚠ Compiled with warnings
+#14 21.56 
+#14 21.56 ./app/recepti/page.tsx
+#14 21.56 Attempted import error: 'Bread' is not exported from '__barrel_optimize__?names=Bread,Cake,Check,ChefHat,ChevronDown,Clock,Coffee,Home,IceCream,Jar,Minus,MoreHorizontal,Pizza,Salad,Search,TrendingDown,TrendingUp,Users,Utensils,Zap!=!lucide-react' (imported as 'Bread').
+#14 21.56 
+#14 21.56 Import trace for requested module:
+#14 21.56 ./app/recepti/page.tsx
+#14 21.56 
+#14 21.56 ./app/recepti/page.tsx
+#14 21.56 Attempted import error: 'Jar' is not exported from '__barrel_optimize__?names=Bread,Cake,Check,ChefHat,ChevronDown,Clock,Coffee,Home,IceCream,Jar,Minus,MoreHorizontal,Pizza,Salad,Search,TrendingDown,TrendingUp,Users,Utensils,Zap!=!lucide-react' (imported as 'Jar').
+#14 21.56 
+#14 21.56 Import trace for requested module:
+#14 21.56 ./app/recepti/page.tsx
+#14 21.56 
+#14 21.56 ./app/recepti/page.tsx
+#14 21.56 Attempted import error: 'Bread' is not exported from '__barrel_optimize__?names=Bread,Cake,Check,ChefHat,ChevronDown,Clock,Coffee,Home,IceCream,Jar,Minus,MoreHorizontal,Pizza,Salad,Search,TrendingDown,TrendingUp,Users,Utensils,Zap!=!lucide-react' (imported as 'Bread').
+#14 21.56 
+#14 21.56 Import trace for requested module:
+#14 21.56 ./app/recepti/page.tsx
+#14 21.56 
+#14 21.56 ./app/recepti/page.tsx
+#14 21.56 Attempted import error: 'Jar' is not exported from '__barrel_optimize__?names=Bread,Cake,Check,ChefHat,ChevronDown,Clock,Coffee,Home,IceCream,Jar,Minus,MoreHorizontal,Pizza,Salad,Search,TrendingDown,TrendingUp,Users,Utensils,Zap!=!lucide-react' (imported as 'Jar').
+#14 21.56 
+#14 21.56 Import trace for requested module:
+#14 21.56 ./app/recepti/page.tsx
+#14 21.56 
+#14 21.56 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 21.56 A Node.js API is used (process.nextTick at line: 351) which is not supported in the Edge Runtime.
+#14 21.56 Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+#14 21.56 
+#14 21.56 Import trace for requested module:
+#14 21.56 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 21.56 ./auth.ts
+#14 21.56 
+#14 21.56 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 21.56 A Node.js API is used (setImmediate at line: 352) which is not supported in the Edge Runtime.
+#14 21.56 Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+#14 21.56 
+#14 21.56 Import trace for requested module:
+#14 21.56 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 21.56 ./auth.ts
+#14 21.56 
+#14 21.56 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 21.56 A Node.js API is used (setImmediate at line: 352) which is not supported in the Edge Runtime.
+#14 21.56 Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+#14 21.56 
+#14 21.56 Import trace for requested module:
+#14 21.56 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 21.56 ./auth.ts
+#14 21.56 
+#14 21.56 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 21.56 A Node.js API is used (process.nextTick at line: 352) which is not supported in the Edge Runtime.
+#14 21.56 Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+#14 21.56 
+#14 21.56 Import trace for requested module:
+#14 21.56 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 21.56 ./auth.ts
+#14 21.56 
+#14 21.56    Linting and checking validity of types ...
+#14 25.18 
+#14 25.18 ./app/admin/blog/[id]/edit/page.tsx
+#14 25.18 416:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 453:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 470:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 
+#14 25.18 ./app/admin/blog/novi/page.tsx
+#14 25.18 330:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 369:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 
+#14 25.18 ./app/admin/ducani/[id]/edit/page.tsx
+#14 25.18 244:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 
+#14 25.18 ./app/admin/ducani/novi/page.tsx
+#14 25.18 191:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 
+#14 25.18 ./app/admin/proizvodi/[id]/edit/page.tsx
+#14 25.18 337:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 
+#14 25.18 ./app/admin/proizvodi/novi/page.tsx
+#14 25.18 289:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 
+#14 25.18 ./app/admin/recepti/[id]/edit/page.tsx
+#14 25.18 510:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 585:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 
+#14 25.18 ./app/admin/recepti/novi/page.tsx
+#14 25.18 360:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 422:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 
+#14 25.18 ./app/admin/restorani/[id]/edit/page.tsx
+#14 25.18 331:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 
+#14 25.18 ./app/admin/restorani/novi/page.tsx
+#14 25.18 283:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 25.18 
+#14 25.18 info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+#14 29.73 Failed to compile.
+#14 29.73 
+#14 29.73 ./app/api/blog/[id]/route.ts:235:50
+#14 29.73 Type error: Argument of type 'File' is not assignable to parameter of type 'import("buffer").File'.
+#14 29.73   The types returned by 'slice(...).stream()' are incompatible between these types.
+#14 29.73     Type 'ReadableStream<Uint8Array<ArrayBuffer>>' is missing the following properties from type 'ReadableStream<any>': values, [Symbol.asyncIterator]
+#14 29.73 
+#14 29.73 [0m [90m 233 |[39m     [36mconst[39m imageFile [33m=[39m formData[33m.[39m[36mget[39m([32m"image"[39m) [36mas[39m [33mFile[39m [33m|[39m [36mnull[39m[33m;[39m[0m
+#14 29.73 [0m [90m 234 |[39m     [36mif[39m (imageFile [33m&&[39m imageFile[33m.[39msize [33m>[39m [35m0[39m) {[0m
+#14 29.73 [0m[31m[1m>[22m[39m[90m 235 |[39m       [36mconst[39m validation [33m=[39m [36mawait[39m validateImageFile(imageFile)[33m;[39m[0m
+#14 29.73 [0m [90m     |[39m                                                  [31m[1m^[22m[39m[0m
+#14 29.73 [0m [90m 236 |[39m       [36mif[39m ([33m![39mvalidation[33m.[39mvalid) {[0m
+#14 29.73 [0m [90m 237 |[39m         [36mreturn[39m [33mNextResponse[39m[33m.[39mjson([0m
+#14 29.73 [0m [90m 238 |[39m           { message[33m:[39m validation[33m.[39merror }[33m,[39m[0m
+#14 29.82 Next.js build worker exited with code: 1 and signal: null
+#14 ERROR: process "/bin/sh -c npx next build" did not complete successfully: exit code: 1
+------
+ > [build 5/6] RUN npx next build:
+29.73     Type 'ReadableStream<Uint8Array<ArrayBuffer>>' is missing the following properties from type 'ReadableStream<any>': values, [Symbol.asyncIterator]
+29.73 
+29.73 [0m [90m 233 |[39m     [36mconst[39m imageFile [33m=[39m formData[33m.[39m[36mget[39m([32m"image"[39m) [36mas[39m [33mFile[39m [33m|[39m [36mnull[39m[33m;[39m[0m
+29.73 [0m [90m 234 |[39m     [36mif[39m (imageFile [33m&&[39m imageFile[33m.[39msize [33m>[39m [35m0[39m) {[0m
+29.73 [0m[31m[1m>[22m[39m[90m 235 |[39m       [36mconst[39m validation [33m=[39m [36mawait[39m validateImageFile(imageFile)[33m;[39m[0m
+29.73 [0m [90m     |[39m                                                  [31m[1m^[22m[39m[0m
+29.73 [0m [90m 236 |[39m       [36mif[39m ([33m![39mvalidation[33m.[39mvalid) {[0m
+29.73 [0m [90m 237 |[39m         [36mreturn[39m [33mNextResponse[39m[33m.[39mjson([0m
+29.73 [0m [90m 238 |[39m           { message[33m:[39m validation[33m.[39merror }[33m,[39m[0m
+29.82 Next.js build worker exited with code: 1 and signal: null
+------
+==> Building image
+Waiting for depot builder...
+
+==> Building image with Depot
+--> build:  (​)
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 67B 0.2s
+#1 transferring dockerfile: 1.09kB 0.4s done
+#1 DONE 0.4s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.2s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6
+#3 resolve docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6 done
+#3 CACHED
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.09kB 0.4s done
+#1 DONE 0.4s
+
+#4 [internal] load build definition from Dockerfile
+#4 Deduplicating step ID [internal] load build definition from Dockerfile, another build is calculating it done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/node:22.15.0-slim
+#5 DONE 0.2s
+
+#6 [internal] load .dockerignore
+#6 transferring context:
+#6 transferring context: 495B 0.4s done
+#6 DONE 0.4s
+
+#7 [base 1/2] FROM docker.io/library/node:22.15.0-slim@sha256:557e52a0fcb928ee113df7e1fb5d4f60c1341dbda53f55e3d815ca10807efdce
+#7 resolve docker.io/library/node:22.15.0-slim@sha256:557e52a0fcb928ee113df7e1fb5d4f60c1341dbda53f55e3d815ca10807efdce done
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 147.18kB 0.7s done
+#8 DONE 0.8s
+
+#9 [base 2/2] WORKDIR /app
+#9 CACHED
+
+#10 [build 1/6] RUN apt-get update -qq &&     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
+#10 CACHED
+
+#11 [build 2/6] COPY package-lock.json package.json ./
+#11 CACHED
+
+#12 [build 3/6] RUN npm ci --include=dev
+#12 CACHED
+
+#13 [build 4/6] COPY . .
+#13 DONE 0.3s
+
+#14 [build 5/6] RUN npx next build
+#14 1.174 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#14 1.174 This information is used to shape Next.js' roadmap and prioritize features.
+#14 1.174 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#14 1.174 https://nextjs.org/telemetry
+#14 1.174 
+#14 1.237   ▲ Next.js 14.2.35
+#14 1.237 
+#14 1.321    Creating an optimized production build ...
+#14 13.91 <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (128kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+#14 20.02  ⚠ Compiled with warnings
+#14 20.02 
+#14 20.02 ./app/recepti/page.tsx
+#14 20.02 Attempted import error: 'Bread' is not exported from '__barrel_optimize__?names=Bread,Cake,Check,ChefHat,ChevronDown,Clock,Coffee,Home,IceCream,Jar,Minus,MoreHorizontal,Pizza,Salad,Search,TrendingDown,TrendingUp,Users,Utensils,Zap!=!lucide-react' (imported as 'Bread').
+#14 20.02 
+#14 20.02 Import trace for requested module:
+#14 20.02 ./app/recepti/page.tsx
+#14 20.02 
+#14 20.02 ./app/recepti/page.tsx
+#14 20.02 Attempted import error: 'Jar' is not exported from '__barrel_optimize__?names=Bread,Cake,Check,ChefHat,ChevronDown,Clock,Coffee,Home,IceCream,Jar,Minus,MoreHorizontal,Pizza,Salad,Search,TrendingDown,TrendingUp,Users,Utensils,Zap!=!lucide-react' (imported as 'Jar').
+#14 20.02 
+#14 20.02 Import trace for requested module:
+#14 20.02 ./app/recepti/page.tsx
+#14 20.02 
+#14 20.02 ./app/recepti/page.tsx
+#14 20.02 Attempted import error: 'Bread' is not exported from '__barrel_optimize__?names=Bread,Cake,Check,ChefHat,ChevronDown,Clock,Coffee,Home,IceCream,Jar,Minus,MoreHorizontal,Pizza,Salad,Search,TrendingDown,TrendingUp,Users,Utensils,Zap!=!lucide-react' (imported as 'Bread').
+#14 20.02 
+#14 20.02 Import trace for requested module:
+#14 20.02 ./app/recepti/page.tsx
+#14 20.02 
+#14 20.02 ./app/recepti/page.tsx
+#14 20.02 Attempted import error: 'Jar' is not exported from '__barrel_optimize__?names=Bread,Cake,Check,ChefHat,ChevronDown,Clock,Coffee,Home,IceCream,Jar,Minus,MoreHorizontal,Pizza,Salad,Search,TrendingDown,TrendingUp,Users,Utensils,Zap!=!lucide-react' (imported as 'Jar').
+#14 20.02 
+#14 20.02 Import trace for requested module:
+#14 20.02 ./app/recepti/page.tsx
+#14 20.02 
+#14 20.02 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 20.02 A Node.js API is used (process.nextTick at line: 351) which is not supported in the Edge Runtime.
+#14 20.02 Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+#14 20.02 
+#14 20.02 Import trace for requested module:
+#14 20.02 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 20.02 ./auth.ts
+#14 20.02 
+#14 20.02 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 20.02 A Node.js API is used (setImmediate at line: 352) which is not supported in the Edge Runtime.
+#14 20.02 Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+#14 20.02 
+#14 20.02 Import trace for requested module:
+#14 20.02 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 20.02 ./auth.ts
+#14 20.02 
+#14 20.02 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 20.02 A Node.js API is used (setImmediate at line: 352) which is not supported in the Edge Runtime.
+#14 20.02 Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+#14 20.02 
+#14 20.02 Import trace for requested module:
+#14 20.02 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 20.02 ./auth.ts
+#14 20.02 
+#14 20.02 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 20.02 A Node.js API is used (process.nextTick at line: 352) which is not supported in the Edge Runtime.
+#14 20.02 Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+#14 20.02 
+#14 20.02 Import trace for requested module:
+#14 20.02 ./node_modules/bcryptjs/dist/bcrypt.js
+#14 20.02 ./auth.ts
+#14 20.02 
+#14 20.02    Linting and checking validity of types ...
+#14 23.48 
+#14 23.48 ./app/admin/blog/[id]/edit/page.tsx
+#14 23.48 416:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 453:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 470:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 
+#14 23.48 ./app/admin/blog/novi/page.tsx
+#14 23.48 330:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 369:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 
+#14 23.48 ./app/admin/ducani/[id]/edit/page.tsx
+#14 23.48 244:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 
+#14 23.48 ./app/admin/ducani/novi/page.tsx
+#14 23.48 191:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 
+#14 23.48 ./app/admin/proizvodi/[id]/edit/page.tsx
+#14 23.48 337:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 
+#14 23.48 ./app/admin/proizvodi/novi/page.tsx
+#14 23.48 289:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 
+#14 23.48 ./app/admin/recepti/[id]/edit/page.tsx
+#14 23.48 510:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 585:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 
+#14 23.48 ./app/admin/recepti/novi/page.tsx
+#14 23.48 360:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 422:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 
+#14 23.48 ./app/admin/restorani/[id]/edit/page.tsx
+#14 23.48 331:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 
+#14 23.48 ./app/admin/restorani/novi/page.tsx
+#14 23.48 283:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+#14 23.48 
+#14 23.48 info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+#14 27.93 Failed to compile.
+#14 27.93 
+#14 27.93 ./app/api/blog/[id]/route.ts:235:50
+#14 27.93 Type error: Argument of type 'File' is not assignable to parameter of type 'import("buffer").File'.
+#14 27.93   The types returned by 'slice(...).stream()' are incompatible between these types.
+#14 27.93     Type 'ReadableStream<Uint8Array<ArrayBuffer>>' is missing the following properties from type 'ReadableStream<any>': values, [Symbol.asyncIterator]
+#14 27.93 
+#14 27.93 [0m [90m 233 |[39m     [36mconst[39m imageFile [33m=[39m formData[33m.[39m[36mget[39m([32m"image"[39m) [36mas[39m [33mFile[39m [33m|[39m [36mnull[39m[33m;[39m[0m
+#14 27.93 [0m [90m 234 |[39m     [36mif[39m (imageFile [33m&&[39m imageFile[33m.[39msize [33m>[39m [35m0[39m) {[0m
+#14 27.93 [0m[31m[1m>[22m[39m[90m 235 |[39m       [36mconst[39m validation [33m=[39m [36mawait[39m validateImageFile(imageFile)[33m;[39m[0m
+#14 27.93 [0m [90m     |[39m                                                  [31m[1m^[22m[39m[0m
+#14 27.93 [0m [90m 236 |[39m       [36mif[39m ([33m![39mvalidation[33m.[39mvalid) {[0m
+#14 27.93 [0m [90m 237 |[39m         [36mreturn[39m [33mNextResponse[39m[33m.[39mjson([0m
+#14 27.93 [0m [90m 238 |[39m           { message[33m:[39m validation[33m.[39merror }[33m,[39m[0m
+#14 28.02 Next.js build worker exited with code: 1 and signal: null
+#14 ERROR: process "/bin/sh -c npx next build" did not complete successfully: exit code: 1
+------
+ > [build 5/6] RUN npx next build:
+27.93     Type 'ReadableStream<Uint8Array<ArrayBuffer>>' is missing the following properties from type 'ReadableStream<any>': values, [Symbol.asyncIterator]
+27.93 
+27.93 [0m [90m 233 |[39m     [36mconst[39m imageFile [33m=[39m formData[33m.[39m[36mget[39m([32m"image"[39m) [36mas[39m [33mFile[39m [33m|[39m [36mnull[39m[33m;[39m[0m
+27.93 [0m [90m 234 |[39m     [36mif[39m (imageFile [33m&&[39m imageFile[33m.[39msize [33m>[39m [35m0[39m) {[0m
+27.93 [0m[31m[1m>[22m[39m[90m 235 |[39m       [36mconst[39m validation [33m=[39m [36mawait[39m validateImageFile(imageFile)[33m;[39m[0m
+27.93 [0m [90m     |[39m                                                  [31m[1m^[22m[39m[0m
+27.93 [0m [90m 236 |[39m       [36mif[39m ([33m![39mvalidation[33m.[39mvalid) {[0m
+27.93 [0m [90m 237 |[39m         [36mreturn[39m [33mNextResponse[39m[33m.[39mjson([0m
+27.93 [0m [90m 238 |[39m           { message[33m:[39m validation[33m.[39merror }[33m,[39m[0m
+28.02 Next.js build worker exited with code: 1 and signal: null
+------
+Error: failed to fetch an image or build from source: error building: failed to solve: process "/bin/sh -c npx next build" did not complete successfully: exit code: 1
