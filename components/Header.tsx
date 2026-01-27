@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { Menu, X, Sun, Moon, Lock } from "lucide-react";
+import { Menu, X, Sun, Moon } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -53,14 +53,6 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          <Link
-            href="/admin"
-            className="rounded-lg p-2 text-gf-text-secondary transition-colors hover:bg-gf-bg-soft hover:text-gf-cta dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-gf-cta"
-            aria-label="Admin Panel"
-            title="Admin Panel"
-          >
-            <Lock size={20} />
-          </Link>
           <button
             onClick={toggleTheme}
             className="rounded-lg p-2 text-gf-text-secondary hover:bg-gf-bg-soft dark:text-neutral-300 dark:hover:bg-neutral-800"
@@ -72,14 +64,6 @@ export function Header() {
 
         {/* Mobile Menu Button */}
         <div className="flex items-center space-x-2 md:hidden">
-          <Link
-            href="/admin"
-            className="rounded-lg p-2 text-gf-text-secondary transition-colors hover:bg-gf-bg-soft hover:text-gf-cta dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-gf-cta"
-            aria-label="Admin Panel"
-            title="Admin Panel"
-          >
-            <Lock size={20} />
-          </Link>
           <button
             onClick={toggleTheme}
             className="rounded-lg p-2 text-gf-text-secondary hover:bg-gf-bg-soft dark:text-neutral-300 dark:hover:bg-neutral-800"
@@ -117,14 +101,6 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
-              <Link
-                href="/admin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gf-text-secondary hover:bg-gf-bg-soft dark:text-neutral-300 dark:hover:bg-neutral-800"
-              >
-                <Lock size={18} />
-                Admin Panel
-              </Link>
             </div>
           </motion.div>
         )}
