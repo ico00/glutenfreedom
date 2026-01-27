@@ -486,7 +486,7 @@ export default function EditReceptPage() {
                         icon: <ChefHat className="h-4 w-4 text-gf-cta" />,
                       })),
                       // Ako postojeća kategorija nije u listi, dodaj je kao opciju
-                      ...(formData.category && !RECIPE_CATEGORIES.includes(formData.category)
+                      ...(formData.category && !(RECIPE_CATEGORIES as readonly string[]).includes(formData.category)
                         ? [{ value: formData.category, label: `${formData.category} (postojeća)`, icon: <ChefHat className="h-4 w-4 text-gf-cta" /> }]
                         : []),
                     ]}
