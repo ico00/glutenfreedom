@@ -11,6 +11,7 @@ export interface Recipe {
   ingredients: string[]; // Učitava se iz Markdown fajla
   instructions: string[]; // Učitava se iz Markdown fajla
   category: string;
+  tags?: string[]; // Opcionalno za backward compatibility
   createdAt: string;
 }
 
@@ -26,6 +27,7 @@ export interface RecipeMetadata {
   servings: number;
   difficulty: "lako" | "srednje" | "teško";
   category: string;
+  tags?: string[]; // Opcionalno za backward compatibility
   createdAt: string;
 }
 

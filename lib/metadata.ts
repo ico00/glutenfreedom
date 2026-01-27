@@ -157,7 +157,7 @@ export function generateProductMetadata(product: Product): Metadata {
     description: product.description,
     keywords: ["proizvod", "gluten free", product.brand, ...product.tags],
     openGraph: {
-      type: "product",
+      type: "website",
       locale: "hr_HR",
       url: getAbsoluteUrl(`/proizvodi/${product.id}`),
       siteName: SITE_NAME,

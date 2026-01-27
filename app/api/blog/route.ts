@@ -110,14 +110,14 @@ export async function POST(request: Request) {
     }
     
     await Logger.info("Blog post creation attempt", {
-      userId: session.user.email,
+      userId: session.user.email ?? undefined,
       ip: clientIp,
     });
 
     // Provjeri rate limit
     const rateLimit = checkRateLimit(`blog-post-${clientIp}`, 5, 60000); // 5 zahtjeva po minuti
     if (!rateLimit.allowed) {
-      await Logger.security("Rate limit exceeded for blog POST", session.user.email, clientIp);
+      await Logger.security("Rate limit exceeded for blog POST", session.user.email ?? undefined, clientIp);
       return NextResponse.json(
         { message: "Too many requests. Please try again later." },
         { 
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     // Provjeri CSRF token
     const csrfToken = request.headers.get("x-csrf-token");
     if (!csrfToken || !(await verifyCsrfToken(csrfToken))) {
-      await Logger.security("Invalid CSRF token for blog POST", session.user.email, clientIp);
+      await Logger.security("Invalid CSRF token for blog POST", session.user.email ?? undefined, clientIp);
       return NextResponse.json(
         { message: "Invalid CSRF token" },
         { status: 403 }
@@ -203,7 +203,7 @@ export async function POST(request: Request) {
     
     if (!validation.success) {
       await Logger.warn("Blog post validation failed", {
-        userId: session.user.email,
+        userId: session.user.email ?? undefined,
         errors: validation.errors?.errors,
       });
       return NextResponse.json(
@@ -288,7 +288,7 @@ export async function POST(request: Request) {
     };
 
     await Logger.info("Blog post created successfully", {
-      userId: session.user.email,
+      userId: session.user.email ?? undefined,
       postId: postId,
       title,
     });

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Logger } from "./logger";
 
-export interface AppError extends Error {
+export interface IAppError extends Error {
   statusCode?: number;
   code?: string;
   isOperational?: boolean;
@@ -10,7 +10,7 @@ export interface AppError extends Error {
 /**
  * Custom error klasa za aplikacijske greške
  */
-export class AppError extends Error implements AppError {
+export class AppError extends Error implements IAppError {
   statusCode: number;
   code: string;
   isOperational: boolean;

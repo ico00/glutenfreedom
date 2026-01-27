@@ -461,7 +461,7 @@ export function RichTextEditor({
         range.insertNode(heading);
       } else {
         // Ako je u postojećem bloku, zamijeni ga
-        let blockElement = range.commonAncestorContainer;
+        let blockElement: Node | null = range.commonAncestorContainer;
         while (blockElement && blockElement !== editorRef.current) {
           if (blockElement.nodeType === Node.ELEMENT_NODE) {
             const el = blockElement as Element;
@@ -502,10 +502,10 @@ export function RichTextEditor({
     const { range } = sel;
     
     // Pronađi blok element
-    let blockElement = range.commonAncestorContainer;
+    let blockElement: Node | null = range.commonAncestorContainer;
     while (blockElement && blockElement !== editorRef.current) {
       if (blockElement.nodeType === Node.ELEMENT_NODE) {
-        const el = blockElement as Element;
+        const el = blockElement as HTMLElement;
         if (["P", "H1", "H2", "H3", "H4", "H5", "H6", "DIV"].includes(el.tagName)) {
           el.style.textAlign = align;
           editorRef.current?.focus();

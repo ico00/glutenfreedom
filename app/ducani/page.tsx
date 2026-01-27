@@ -219,7 +219,7 @@ export default function DucaniPage() {
                         className="object-cover transition-transform duration-300 group-hover:scale-110"
                       />
                     ) : (
-                      <ImagePlaceholder type="store" />
+                      <ImagePlaceholder emoji="🏪" gradient="from-gf-safe/40 via-gf-cta/30 to-gf-safe/40" />
                     )}
                     <motion.div
                       initial={{ opacity: 0 }}
