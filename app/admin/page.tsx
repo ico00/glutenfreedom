@@ -39,6 +39,29 @@ export default function AdminPage() {
     }
   }, [session, status, router]);
 
+  // Učitaj podatke kada se tab promijeni
+  useEffect(() => {
+    if (status === "unauthenticated" || !session) return; // Ne učitavaj podatke ako nije autentificiran
+    
+    if (activeTab === "recipes") {
+      loadRecipes();
+    } else if (activeTab === "blog") {
+      loadBlogPosts();
+    } else if (activeTab === "products") {
+      loadProducts();
+    } else if (activeTab === "restaurants") {
+      loadRestaurants();
+    } else if (activeTab === "stores") {
+      loadStores();
+    }
+  }, [activeTab, status, session]);
+
+  // Učitaj recepte pri prvom učitavanju (recipes je default tab)
+  useEffect(() => {
+    if (status === "unauthenticated" || !session) return; // Ne učitavaj podatke ako nije autentificiran
+    loadRecipes();
+  }, [status, session]);
+
   // Ne renderiraj stranicu dok se ne provjeri autentifikacija
   if (status === "loading") {
     return (
@@ -53,26 +76,6 @@ export default function AdminPage() {
   if (status === "unauthenticated" || !session) {
     return null; // Redirect će se izvršiti u useEffect
   }
-
-  // Učitaj podatke kada se tab promijeni
-  useEffect(() => {
-    if (activeTab === "recipes") {
-      loadRecipes();
-    } else if (activeTab === "blog") {
-      loadBlogPosts();
-    } else if (activeTab === "products") {
-      loadProducts();
-    } else if (activeTab === "restaurants") {
-      loadRestaurants();
-    } else if (activeTab === "stores") {
-      loadStores();
-    }
-  }, [activeTab]);
-
-  // Učitaj recepte pri prvom učitavanju (recipes je default tab)
-  useEffect(() => {
-    loadRecipes();
-  }, []);
 
   async function loadBlogPosts() {
     setIsLoading(true);
