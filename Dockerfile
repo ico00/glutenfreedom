@@ -43,6 +43,7 @@ COPY --from=build /app/public /app/public
 COPY --from=build /app/package.json /app/package.json
 COPY --from=build /app/package-lock.json /app/package-lock.json
 COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/next.config.mjs /app/next.config.mjs
 COPY --from=build /app/docker-entrypoint.js /app/docker-entrypoint.js
 # Copy data and content folders (required for API routes)
 COPY --from=build /app/data /app/data
