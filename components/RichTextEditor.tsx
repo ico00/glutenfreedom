@@ -18,7 +18,10 @@ import {
   ListOrdered,
   X,
   ExternalLink,
+  Maximize2,
+  Trash2,
 } from "lucide-react";
+import { getCsrfToken } from "@/lib/csrfClient";
 
 interface RichTextEditorProps {
   value: string;
@@ -33,6 +36,8 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const lastSentContentRef = useRef<string>("");
+  const skipNextSyncRef = useRef(false); // nakon umetanja slike ne prepisuj editor dok parent ne dobije novi value
+  const savedInsertRangeRef = useRef<Range | null>(null); // pozicija za umetanje slike (prije otvaranja file dijaloga)
   const [isHeadingOpen, setIsHeadingOpen] = useState(false);
   const [selectedHeading, setSelectedHeading] = useState<string>("");
   const headingDropdownRef = useRef<HTMLDivElement>(null);
@@ -56,6 +61,14 @@ export function RichTextEditor({
   // Color modal state
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#000000");
+
+  // Image align modal (nakon uploada slike)
+  const [isImageAlignModalOpen, setIsImageAlignModalOpen] = useState(false);
+  const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
+
+  // Image edit modal (klik na sliku u editoru – ukloni ili promijeni poravnanje)
+  const [isImageEditModalOpen, setIsImageEditModalOpen] = useState(false);
+  const selectedImageRef = useRef<HTMLImageElement | null>(null);
   
   // Predefined font sizes
   const fontSizes = [
@@ -179,15 +192,19 @@ export function RichTextEditor({
     { value: "p", label: "Paragraf", preview: "text-base font-normal" },
   ];
 
-  // Sync value iz parenta u editor samo kad je to novi sadržaj (npr. učitani post), ne kad parent vrati ono što smo upravo poslali – inače se gubi cursor i ponaša čudno
+  // Sync value iz parenta u editor samo kad je to novi sadržaj (npr. učitani post), ne kad parent vrati ono što smo upravo poslali – inače se gubi cursor/slika
   useEffect(() => {
     if (!editorRef.current) return;
+    if (skipNextSyncRef.current) {
+      skipNextSyncRef.current = false;
+      return;
+    }
     if (value === lastSentContentRef.current) return;
     editorRef.current.innerHTML = value;
     lastSentContentRef.current = value;
   }, [value]);
 
-  const updateContent = () => {
+  const updateContent = (skipSyncRef = false) => {
     if (editorRef.current) {
       let html = editorRef.current.innerHTML;
 
@@ -200,6 +217,7 @@ export function RichTextEditor({
       html = html.replace(/<\/i>/gi, "</em>");
 
       lastSentContentRef.current = html;
+      if (skipSyncRef) skipNextSyncRef.current = true;
       onChange(html);
     }
   };
@@ -215,6 +233,75 @@ export function RichTextEditor({
     }
     
     return { selection, range };
+  };
+
+  // Spremi poziciju kursora za umetanje slike (prije otvaranja file dijaloga se gubi selection)
+  const saveInsertRange = () => {
+    const sel = getSelectionAndRange();
+    if (sel) savedInsertRangeRef.current = sel.range.cloneRange();
+    else savedInsertRangeRef.current = null;
+  };
+
+  // Umetni sliku s odabranim poravnanjem (nakon odabira u modal-u)
+  const insertImageWithAlign = (align: "left" | "right" | "center" | "full") => {
+    const url = pendingImageUrl;
+    if (!url || !editorRef.current) return;
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = "";
+    img.style.maxWidth = "100%";
+    img.style.height = "auto";
+    if (align !== "full") {
+      img.setAttribute("align", align);
+    }
+    const range = savedInsertRangeRef.current;
+    const rangeValid = range && editorRef.current.contains(range.startContainer);
+    if (rangeValid) {
+      try {
+        range.insertNode(img);
+      } catch {
+        editorRef.current.appendChild(img);
+      }
+    } else {
+      editorRef.current.appendChild(img);
+    }
+    updateContent(true);
+    editorRef.current.focus();
+    setIsImageAlignModalOpen(false);
+    setPendingImageUrl(null);
+  };
+
+  const closeImageAlignModal = () => {
+    // Odustani = umetni s punom širinom da upload ne propadne
+    if (pendingImageUrl) insertImageWithAlign("full");
+    setIsImageAlignModalOpen(false);
+    setPendingImageUrl(null);
+  };
+
+  const closeImageEditModal = () => {
+    setIsImageEditModalOpen(false);
+    selectedImageRef.current = null;
+  };
+
+  const removeSelectedImage = () => {
+    const img = selectedImageRef.current;
+    if (img?.parentNode) {
+      img.parentNode.removeChild(img);
+      updateContent();
+    }
+    closeImageEditModal();
+  };
+
+  const setSelectedImageAlign = (align: "left" | "right" | "center" | "full") => {
+    const img = selectedImageRef.current;
+    if (!img) return;
+    if (align === "full") {
+      img.removeAttribute("align");
+    } else {
+      img.setAttribute("align", align);
+    }
+    updateContent();
+    closeImageEditModal();
   };
 
   // Helper funkcija za provjeru da li je element u određenom tagu
@@ -1529,13 +1616,17 @@ export function RichTextEditor({
               }
 
               try {
-                // Upload sliku
+                // Upload sliku (s CSRF tokenom)
                 const uploadData = new FormData();
                 uploadData.append("image", file);
+                const csrfToken = await getCsrfToken();
 
                 const uploadResponse = await fetch("/api/blog/upload-image", {
                   method: "POST",
                   body: uploadData,
+                  headers: {
+                    ...(csrfToken && { "x-csrf-token": csrfToken }),
+                  },
                 });
 
                 if (!uploadResponse.ok) {
@@ -1550,29 +1641,9 @@ export function RichTextEditor({
                   throw new Error("Nije dobiven URL slike");
                 }
 
-                // Pitaj za poziciju
-                const align = prompt("Pozicija slike (left/right/center/full):", "full") || "full";
-
-                // Umetni sliku u editor
-                if (editorRef.current) {
-                  const img = document.createElement("img");
-                  img.src = url;
-                  img.alt = "";
-                  img.style.maxWidth = "100%";
-                  img.style.height = "auto";
-                  if (align && align !== "full") {
-                    img.setAttribute("align", align);
-                  }
-                  const selection = window.getSelection();
-                  if (selection && selection.rangeCount > 0) {
-                    const range = selection.getRangeAt(0);
-                    range.insertNode(img);
-                  } else {
-                    editorRef.current.appendChild(img);
-                  }
-                  updateContent();
-                  editorRef.current.focus();
-                }
+                // Otvori modal za odabir poravnanja umjesto prompta
+                setPendingImageUrl(url);
+                setIsImageAlignModalOpen(true);
               } catch (error) {
                 console.error("Error uploading image:", error);
                 alert(`Greška pri uploadu slike: ${error instanceof Error ? error.message : "Nepoznata greška"}`);
@@ -1602,10 +1673,19 @@ export function RichTextEditor({
         contentEditable
         onInput={updateContent}
         onBlur={updateContent}
-        onClick={updateSelectedHeadingFromSelection}
-        onKeyUp={updateSelectedHeadingFromSelection}
-        onMouseUp={updateSelectedHeadingFromSelection}
-        className="min-h-[300px] px-4 py-3 text-gf-text-primary focus:outline-none dark:text-neutral-100 [&_a]:text-gf-cta [&_a]:underline [&_a:hover]:text-gf-cta-hover [&_a]:cursor-pointer [&_a]:relative [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-1 [&_h1]:mt-8 [&_h1]:mb-4 [&_h2]:mt-7 [&_h2]:mb-3 [&_h3]:mt-6 [&_h3]:mb-3 [&_h4]:mt-5 [&_h4]:mb-2 [&_h5]:mt-4 [&_h5]:mb-2 [&_h6]:mt-4 [&_h6]:mb-2 [&_p]:my-3 [&_p]:leading-relaxed"
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.tagName === "IMG") {
+            selectedImageRef.current = target as HTMLImageElement;
+            setIsImageEditModalOpen(true);
+            return;
+          }
+          saveInsertRange();
+          updateSelectedHeadingFromSelection();
+        }}
+        onKeyUp={() => { saveInsertRange(); updateSelectedHeadingFromSelection(); }}
+        onMouseUp={() => { saveInsertRange(); updateSelectedHeadingFromSelection(); }}
+        className="min-h-[300px] px-4 py-3 text-gf-text-primary focus:outline-none dark:text-neutral-100 [&_a]:text-gf-cta [&_a]:underline [&_a:hover]:text-gf-cta-hover [&_a]:cursor-pointer [&_img]:cursor-pointer [&_img]:rounded-lg [&_a]:relative [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-1 [&_h1]:mt-8 [&_h1]:mb-4 [&_h2]:mt-7 [&_h2]:mb-3 [&_h3]:mt-6 [&_h3]:mb-3 [&_h4]:mt-5 [&_h4]:mb-2 [&_h5]:mt-4 [&_h5]:mb-2 [&_h6]:mt-4 [&_h6]:mb-2 [&_p]:my-3 [&_p]:leading-relaxed"
         style={{
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
@@ -1849,6 +1929,160 @@ export function RichTextEditor({
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image align modal – odabir poravnanja nakon uploada */}
+      {isImageAlignModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeImageAlignModal}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-700 dark:bg-neutral-800">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gf-cta to-gf-cta-hover">
+                  <ImageIcon className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gf-text-primary dark:text-neutral-100">
+                  Pozicija slike
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={closeImageAlignModal}
+                className="rounded-full p-2 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mb-4 text-sm text-gf-text-secondary dark:text-neutral-400">
+              Odaberi kako želiš poravnati sliku u tekstu.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => insertImageWithAlign("left")}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:border-gf-cta hover:bg-gf-cta/10 dark:border-neutral-600 dark:bg-neutral-700 dark:hover:border-gf-cta dark:hover:bg-gf-cta/20"
+              >
+                <AlignLeft className="h-5 w-5 shrink-0 text-gf-cta" />
+                <span className="text-sm font-medium text-gf-text-primary dark:text-neutral-100">Lijevo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => insertImageWithAlign("right")}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:border-gf-cta hover:bg-gf-cta/10 dark:border-neutral-600 dark:bg-neutral-700 dark:hover:border-gf-cta dark:hover:bg-gf-cta/20"
+              >
+                <AlignRight className="h-5 w-5 shrink-0 text-gf-cta" />
+                <span className="text-sm font-medium text-gf-text-primary dark:text-neutral-100">Desno</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => insertImageWithAlign("center")}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:border-gf-cta hover:bg-gf-cta/10 dark:border-neutral-600 dark:bg-neutral-700 dark:hover:border-gf-cta dark:hover:bg-gf-cta/20"
+              >
+                <AlignCenter className="h-5 w-5 shrink-0 text-gf-cta" />
+                <span className="text-sm font-medium text-gf-text-primary dark:text-neutral-100">Centrirano</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => insertImageWithAlign("full")}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:border-gf-cta hover:bg-gf-cta/10 dark:border-neutral-600 dark:bg-neutral-700 dark:hover:border-gf-cta dark:hover:bg-gf-cta/20"
+              >
+                <Maximize2 className="h-5 w-5 shrink-0 text-gf-cta" />
+                <span className="text-sm font-medium text-gf-text-primary dark:text-neutral-100">Puna širina</span>
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={closeImageAlignModal}
+              className="mt-4 w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-gf-text-secondary transition-colors hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
+            >
+              Odustani (umetni punu širinu)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Image edit modal – klik na sliku: ukloni ili promijeni poravnanje */}
+      {isImageEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeImageEditModal}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-700 dark:bg-neutral-800">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gf-cta to-gf-cta-hover">
+                  <ImageIcon className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gf-text-primary dark:text-neutral-100">
+                  Uredi sliku
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={closeImageEditModal}
+                className="rounded-full p-2 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mb-4 text-sm text-gf-text-secondary dark:text-neutral-400">
+              Promijeni poravnanje ili ukloni sliku iz teksta.
+            </p>
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedImageAlign("left")}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:border-gf-cta hover:bg-gf-cta/10 dark:border-neutral-600 dark:bg-neutral-700 dark:hover:border-gf-cta dark:hover:bg-gf-cta/20"
+              >
+                <AlignLeft className="h-5 w-5 shrink-0 text-gf-cta" />
+                <span className="text-sm font-medium text-gf-text-primary dark:text-neutral-100">Lijevo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedImageAlign("right")}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:border-gf-cta hover:bg-gf-cta/10 dark:border-neutral-600 dark:bg-neutral-700 dark:hover:border-gf-cta dark:hover:bg-gf-cta/20"
+              >
+                <AlignRight className="h-5 w-5 shrink-0 text-gf-cta" />
+                <span className="text-sm font-medium text-gf-text-primary dark:text-neutral-100">Desno</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedImageAlign("center")}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:border-gf-cta hover:bg-gf-cta/10 dark:border-neutral-600 dark:bg-neutral-700 dark:hover:border-gf-cta dark:hover:bg-gf-cta/20"
+              >
+                <AlignCenter className="h-5 w-5 shrink-0 text-gf-cta" />
+                <span className="text-sm font-medium text-gf-text-primary dark:text-neutral-100">Centrirano</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedImageAlign("full")}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:border-gf-cta hover:bg-gf-cta/10 dark:border-neutral-600 dark:bg-neutral-700 dark:hover:border-gf-cta dark:hover:bg-gf-cta/20"
+              >
+                <Maximize2 className="h-5 w-5 shrink-0 text-gf-cta" />
+                <span className="text-sm font-medium text-gf-text-primary dark:text-neutral-100">Puna širina</span>
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={removeSelectedImage}
+              className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-300 bg-white px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-700 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
+            >
+              <Trash2 className="h-4 w-4" />
+              Ukloni sliku
+            </button>
+            <button
+              type="button"
+              onClick={closeImageEditModal}
+              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-gf-text-secondary transition-colors hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
+            >
+              Odustani
+            </button>
           </div>
         </div>
       )}
