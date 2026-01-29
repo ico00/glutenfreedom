@@ -53,7 +53,6 @@ export const productSchema = z.object({
   brand: z.string().min(1).max(100),
   category: z.string().min(1).max(100),
   store: z.string().max(200).optional(),
-  tags: z.array(z.string().min(1).max(50)),
   certified: z.boolean(),
   price: z.number().positive().max(10000).optional(),
   weight: z.number().int().positive().max(100000).optional(), // max 100kg

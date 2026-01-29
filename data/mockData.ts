@@ -281,7 +281,6 @@ export const mockProducts: Product[] = [
     description: "Univerzalno brašno za pekaru",
     brand: "Schär",
     category: "brašno",
-    tags: ["pekara", "osnovno"],
     certified: true,
   },
   {
@@ -290,7 +289,6 @@ export const mockProducts: Product[] = [
     description: "Tjestenine od kukuruza i riže",
     brand: "Barilla",
     category: "tjestenine",
-    tags: ["glavno jelo", "tjestenine"],
     certified: true,
   },
 ];

@@ -99,7 +99,6 @@ export interface Product {
   category: string;
   image?: string;
   store?: string;
-  tags: string[];
   certified: boolean;
   price?: number;
   weight?: number;

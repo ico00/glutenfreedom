@@ -103,5 +103,19 @@
     ],
     "readTime": 1,
     "createdAt": "2026-01-25"
+  },
+  {
+    "id": "260127-pijani-celijakiar",
+    "title": "Pijani celijakičar",
+    "excerpt": "Give yourself to the dark side.",
+    "image": "/images/blog/260127-pijani-celijakiar-1769697121823-y0qg2ft-_MG_8509.jpg",
+    "gallery": [],
+    "author": "Ivica Drusany",
+    "tags": [],
+    "category": [
+      "Iskustva"
+    ],
+    "readTime": 2,
+    "createdAt": "2026-01-27"
   }
 ]

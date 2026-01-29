@@ -132,22 +132,6 @@ export async function PUT(
     const weightUnit = formData.get("weightUnit") as "g" | "ml" | null;
     const storeValue = sanitizeString(formData.get("store") as string || "", 200);
 
-    // Parsiraj tagove
-    let tags: string[] = existingProduct.tags;
-    try {
-      const tagsData = formData.get("tags") as string;
-      if (tagsData) {
-        tags = JSON.parse(tagsData);
-        if (!Array.isArray(tags)) {
-          tags = existingProduct.tags;
-        } else {
-          tags = tags.map(tag => sanitizeString(tag, 50)).filter(Boolean);
-        }
-      }
-    } catch {
-      tags = existingProduct.tags;
-    }
-
     const updatedProduct: Product = {
       ...existingProduct,
       name,
@@ -155,7 +139,6 @@ export async function PUT(
       brand,
       category,
       store: storeValue || undefined,
-      tags,
       certified: formData.get("certified") === "true",
       price: priceValue ? parseFloat(priceValue) : existingProduct.price,
       weight: weightValue ? parseInt(weightValue) : existingProduct.weight,

@@ -5,11 +5,6 @@
     "description": "tapioka brašno",
     "brand": "No Gluten No Problem",
     "category": "brašno",
-    "tags": [
-      "brašno",
-      "tapioka",
-      ""
-    ],
     "certified": true,
     "image": "/images/products/6a315573-6aa5-4a92-b419-8ae0ee3d1346-357327d81e7592a6661fbca6215a61db162ccd438802a608d05fb668bf373162-2.jpeg",
     "store": "Konzum",
@@ -22,9 +17,6 @@
     "description": "Slatkiš koji se pojavljuje samo u božićno doba",
     "brand": "Alnavit",
     "category": "slatkiši",
-    "tags": [
-      "slatkiši"
-    ],
     "certified": true,
     "store": "Bio Planet",
     "weight": 140,
@@ -39,11 +31,6 @@
     "brand": "Vitaminka",
     "category": "snack",
     "store": "Spar",
-    "tags": [
-      "grickalice",
-      "smoki",
-      "kikiriki"
-    ],
     "certified": false,
     "price": 2,
     "weight": 40,
@@ -56,9 +43,6 @@
     "brand": "Gavrilović",
     "category": "ostalo",
     "store": "Konzum",
-    "tags": [
-      "salama"
-    ],
     "certified": true,
     "price": 29,
     "weight": 1000,
@@ -71,10 +55,6 @@
     "brand": "Vindija",
     "category": "pića",
     "store": "Konzum",
-    "tags": [
-      "mlijeko",
-      "bez laktoze"
-    ],
     "certified": false,
     "price": 1.59,
     "weight": 1000,
@@ -88,9 +68,6 @@
     "brand": "Callebaut",
     "category": "slatkiši",
     "store": "Spar",
-    "tags": [
-      "slatkiši"
-    ],
     "certified": false,
     "price": 15,
     "weight": 400,
@@ -104,9 +81,6 @@
     "brand": "Schär",
     "category": "brašno",
     "store": "Konzum",
-    "tags": [
-      "brašno"
-    ],
     "certified": true,
     "price": 6.19,
     "weight": 1000,
@@ -120,9 +94,6 @@
     "brand": "Schär",
     "category": "pekara",
     "store": "Konzum",
-    "tags": [
-      "pekara"
-    ],
     "certified": true,
     "price": 1.79,
     "weight": 20,
@@ -133,16 +104,39 @@
     "id": "24ab205c-d6bc-4fd7-8b9f-b596ba950659",
     "name": "Fusilli",
     "description": "Odlično tijesto normalnog okusa, bez pjeskovite teksture",
-    "brand": "Schär",
+    "brand": "Barilla",
     "category": "tjestenine",
     "store": "Konzum",
-    "tags": [
-      "tjestenina"
-    ],
     "certified": true,
     "price": 4.69,
     "weight": 400,
     "weightUnit": "g",
     "image": "/images/products/24ab205c-d6bc-4fd7-8b9f-b596ba950659-1768845565111-nni1dq3-barilla-fusilli.png"
+  },
+  {
+    "id": "943d18d5-488b-4bd1-8b5b-cf5cf556e2f8",
+    "name": "Prašak za pecivo",
+    "description": "Na ovom piše Gluten Free, pa navalite",
+    "brand": "Podravka",
+    "category": "pekara",
+    "store": "Konzum",
+    "certified": true,
+    "price": 0.2,
+    "weight": 12,
+    "weightUnit": "g",
+    "image": "/images/products/943d18d5-488b-4bd1-8b5b-cf5cf556e2f8-1769698002666-94pojhr-pra_ak_za_pecivo.png"
+  },
+  {
+    "id": "5d6297b1-deef-47b1-930b-7e0ac68beeb4",
+    "name": "Palenta",
+    "description": "Dosta žganaca u dućanima ima kontaminaciju, ovi su jedni od rijetkih koji nemaju, odnosno piše Gluten Free",
+    "brand": "No Gluten No Problem",
+    "category": "prilozi",
+    "store": "Spar",
+    "certified": true,
+    "price": 3.29,
+    "weight": 500,
+    "weightUnit": "g",
+    "image": "/images/products/5d6297b1-deef-47b1-930b-7e0ac68beeb4-1769698428846-tq2ea48-palenta.png"
   }
 ]

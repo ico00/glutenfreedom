@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, Tag, Store, ShoppingBag, Scale } from "lucide-react";
+import { ArrowLeft, Upload, Package, Store, ShoppingBag, Scale } from "lucide-react";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { CustomSelect } from "@/components/CustomSelect";
 import { BRANDS, STORES, PRODUCT_CATEGORIES } from "@/lib/constants";
@@ -18,7 +18,6 @@ export default function NoviProizvodPage() {
     brand: "",
     category: "",
     store: "",
-    tags: "",
     certified: false,
     price: "",
     weight: "",
@@ -26,9 +25,9 @@ export default function NoviProizvodPage() {
     image: null as File | null,
   });
 
-  const brands = [...BRANDS];
-  const stores = [...STORES];
-  const categories = [...PRODUCT_CATEGORIES];
+  const brands = [...BRANDS].sort((a, b) => a.localeCompare(b, "hr"));
+  const stores = [...STORES].sort((a, b) => a.localeCompare(b, "hr"));
+  const categories = [...PRODUCT_CATEGORIES].sort((a, b) => a.localeCompare(b, "hr"));
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,7 +52,6 @@ export default function NoviProizvodPage() {
       submitData.append("brand", formData.brand);
       submitData.append("category", formData.category);
       submitData.append("store", formData.store);
-      submitData.append("tags", JSON.stringify(formData.tags.split(",").map((t) => t.trim())));
       submitData.append("certified", formData.certified.toString());
       submitData.append("price", formData.price || "");
       submitData.append("weight", formData.weight || "");
@@ -145,7 +143,7 @@ export default function NoviProizvodPage() {
               options={brands.map((brand) => ({
                 value: brand,
                 label: brand,
-                icon: <Tag className="h-4 w-4 text-gf-cta" />,
+                icon: <Package className="h-4 w-4 text-gf-cta" />,
               }))}
               placeholder="Odaberi marku"
             />
@@ -232,22 +230,6 @@ export default function NoviProizvodPage() {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Tagovi */}
-          <div>
-            <label htmlFor="tags" className="mb-2 block text-sm font-medium text-gf-text-primary dark:text-neutral-300">
-              Tagovi (odvojeni zarezom) *
-            </label>
-            <input
-              type="text"
-              id="tags"
-              required
-              value={formData.tags}
-              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-gf-text-primary focus:border-gf-cta focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              placeholder="npr. pekara, osnovno"
-            />
           </div>
 
           {/* Certificirano */}

@@ -64,7 +64,9 @@ export async function GET() {
     (product) => !deletedIds.includes(product.id)
   );
   
-  return NextResponse.json([...filteredMockProducts, ...filteredDynamicProducts]);
+  // Novi prvi na listi: spojeni niz obrnut (u JSON-u se novi dodaju na kraj)
+  const combined = [...filteredMockProducts, ...filteredDynamicProducts];
+  return NextResponse.json([...combined].reverse());
 }
 
 export async function POST(request: Request) {
@@ -108,21 +110,6 @@ export async function POST(request: Request) {
     const weightValue = formData.get("weight") as string;
     const weightUnit = formData.get("weightUnit") as "g" | "ml" | null;
 
-    // Parsiraj tagove
-    let tags: string[] = [];
-    try {
-      const tagsData = formData.get("tags") as string;
-      if (tagsData) {
-        tags = JSON.parse(tagsData);
-        if (!Array.isArray(tags)) {
-          tags = [];
-        }
-        tags = tags.map(tag => sanitizeString(tag, 50)).filter(Boolean);
-      }
-    } catch {
-      tags = [];
-    }
-
     const newProduct: Product = {
       id: randomUUID(),
       name,
@@ -130,7 +117,6 @@ export async function POST(request: Request) {
       brand,
       category,
       store: sanitizeString(formData.get("store") as string || "", 200) || undefined,
-      tags,
       certified: formData.get("certified") === "true",
       price: priceValue ? parseFloat(priceValue) : undefined,
       weight: weightValue ? parseInt(weightValue) : undefined,

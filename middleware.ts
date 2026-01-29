@@ -11,25 +11,48 @@ export default auth((req) => {
   }
 
   const { nextUrl } = req;
+  const isProduction = process.env.NODE_ENV === "production";
+
+  // U produkciji admin je isključen – samo javna read-only stranica
+  if (isProduction) {
+    if (nextUrl.pathname.startsWith("/admin") || nextUrl.pathname.startsWith("/login")) {
+      const response = NextResponse.redirect(new URL("/", nextUrl.origin));
+      return addSecurityHeaders(response, req);
+    }
+    const isModifyingApiInProd = nextUrl.pathname.startsWith("/api") &&
+      ["POST", "PUT", "PATCH", "DELETE"].includes(req.method) &&
+      (nextUrl.pathname.includes("/api/blog") ||
+       nextUrl.pathname.includes("/api/recepti") ||
+       nextUrl.pathname.includes("/api/restorani") ||
+       nextUrl.pathname.includes("/api/proizvodi") ||
+       nextUrl.pathname.includes("/api/ducani"));
+    if (isModifyingApiInProd) {
+      const response = NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return addSecurityHeaders(response, req);
+    }
+  }
+
   const isLoggedIn = !!req.auth;
   const isOnAdmin = nextUrl.pathname.startsWith("/admin");
   const isOnApi = nextUrl.pathname.startsWith("/api");
-  
-  // Provjeri da li je modificirajući API zahtjev
-  const isModifyingApi = isOnApi && 
+
+  // Zahtjev mijenja podatke samo ako je POST/PUT/PATCH/DELETE na zaštićenim API rutama
+  const isDataApi = isOnApi &&
     (nextUrl.pathname.includes("/api/blog") ||
      nextUrl.pathname.includes("/api/recepti") ||
      nextUrl.pathname.includes("/api/restorani") ||
      nextUrl.pathname.includes("/api/proizvodi") ||
      nextUrl.pathname.includes("/api/ducani"));
-  
-  // Ako je GET zahtjev na API, dozvoli pristup
-  if (isOnApi && req.method === "GET" && !isModifyingApi) {
+  const isModifyingMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
+  const isModifyingApi = isDataApi && isModifyingMethod;
+
+  // GET na API (uključujući /api/blog, /api/recepti, itd.) – javno, bez prijave
+  if (isOnApi && req.method === "GET") {
     const response = NextResponse.next();
     return addSecurityHeaders(response, req);
   }
-  
-  // Za admin stranice i modificirajuće API rute, zahtijevamo login
+
+  // Za admin stranice i zahtjeve koji mijenjaju podatke (POST/PUT/PATCH/DELETE) – zahtijevamo login
   if ((isOnAdmin || isModifyingApi) && !isLoggedIn) {
     // Ako je API zahtjev, vrati 401
     if (isOnApi) {

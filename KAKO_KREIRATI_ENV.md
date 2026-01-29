@@ -53,6 +53,10 @@ ADMIN_EMAIL=admin@glutenfreedom.hr
 # Admin lozinka (u produkciji koristi ADMIN_PASSWORD_HASH umjesto ovoga)
 ADMIN_PASSWORD=tvoja-sigurna-lozinka-ovdje
 
+# URL stranice (za lokalni razvoj nije obavezan – koristi se http://localhost:3000)
+# Za produkciju na Fly.io OBAVEZNO postavi na stvarni URL (vidi odlomak "Za Fly.io" ispod)
+# NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
 # Node environment
 NODE_ENV=development
 ```
@@ -74,8 +78,9 @@ Kopiraj generirani string i stavi ga u `AUTH_SECRET=`.
    - Provjeri da nije slučajno commitana
 
 2. **Za produkciju:**
-   - Koristi environment varijable na hosting platformi (Vercel, Netlify, itd.)
-   - Ili stvori `.env.production` datoteku na serveru
+   - Koristi environment varijable na hosting platformi (Vercel, Netlify, Fly.io, itd.)
+   - Na Fly.io ne koristiš `.env` datoteku – varijable postavljaš naredbom `fly secrets set` (vidi odlomak **Za Fly.io** ispod).
+   - **NEXT_PUBLIC_SITE_URL** mora biti postavljen na stvarni URL aplikacije (npr. `https://bezglutenska-sila.fly.dev`), inače sitemap, robots.txt i OG slike koriste `http://localhost:3000`.
 
 3. **Za hash lozinke (opcionalno, ali preporučeno):**
    ```bash
@@ -85,6 +90,28 @@ Kopiraj generirani string i stavi ga u `AUTH_SECRET=`.
    ```env
    ADMIN_PASSWORD_HASH=$2a$10$generirani-hash-ovdje
    ```
+
+### Za Fly.io (produkcija)
+
+Na Fly.io se varijable ne postavljaju u `.env` datoteku, već kao **secrets** naredbom `fly secrets set`. Obavezno postavi sljedeće (zamijeni vrijednosti u zagradama):
+
+```bash
+# Iz root direktorija projekta, s flyctl prijavljenim na tvoj Fly.io račun:
+fly secrets set AUTH_SECRET="<generiraj: openssl rand -base64 32>"
+fly secrets set ADMIN_EMAIL="admin@glutenfreedom.hr"
+fly secrets set ADMIN_PASSWORD="<tvoja-sigurna-lozinka>"
+# Ili umjesto ADMIN_PASSWORD koristi bcrypt hash:
+# fly secrets set ADMIN_PASSWORD_HASH="<bcrypt hash>"
+
+# Važno za sitemap, robots.txt i OG slike – stvarni URL aplikacije
+fly secrets set NEXT_PUBLIC_SITE_URL="https://bezglutenska-sila.fly.dev"
+```
+
+Ako nakon deploya prijava ne radi (npr. callback URL), dodaj i:
+
+```bash
+fly secrets set NEXTAUTH_URL="https://bezglutenska-sila.fly.dev"
+```
 
 ## ✅ Provjera
 

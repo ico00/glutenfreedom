@@ -32,6 +32,7 @@ export function RichTextEditor({
   placeholder = "Unesi sadržaj...",
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const lastSentContentRef = useRef<string>("");
   const [isHeadingOpen, setIsHeadingOpen] = useState(false);
   const [selectedHeading, setSelectedHeading] = useState<string>("");
   const headingDropdownRef = useRef<HTMLDivElement>(null);
@@ -42,6 +43,11 @@ export function RichTextEditor({
   const [linkOpenInNewTab, setLinkOpenInNewTab] = useState(true);
   const [savedRange, setSavedRange] = useState<Range | null>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
+  const [linkSuggestions, setLinkSuggestions] = useState<{ path: string; title: string; label: string }[]>([]);
+  const [linkSuggestionsVisible, setLinkSuggestionsVisible] = useState(false);
+  const [linkSuggestionsSource, setLinkSuggestionsSource] = useState<{ path: string; title: string; label: string }[]>([]);
+  const [isEditingLink, setIsEditingLink] = useState(false);
+  const editingLinkRef = useRef<HTMLAnchorElement | null>(null);
   
   // Font size modal state
   const [isFontSizeModalOpen, setIsFontSizeModalOpen] = useState(false);
@@ -102,6 +108,69 @@ export function RichTextEditor({
     }
   }, [isHeadingOpen]);
 
+  // Učitaj blog, recepte i proizvode za predloške linkova kad se link modal otvori
+  useEffect(() => {
+    if (!isLinkModalOpen) {
+      setLinkSuggestionsSource([]);
+      setLinkSuggestions([]);
+      setLinkSuggestionsVisible(false);
+      return;
+    }
+    Promise.all([
+      fetch("/api/blog", { cache: "no-store" }).then((r) => r.json()),
+      fetch("/api/recepti", { cache: "no-store" }).then((r) => r.json()),
+      fetch("/api/proizvodi", { cache: "no-store" }).then((r) => r.json()),
+    ])
+      .then(([blogData, receptiData, proizvodiData]) => {
+        const items: { path: string; title: string; label: string }[] = [];
+        if (Array.isArray(blogData)) {
+          blogData.forEach((p: { id: string; title: string }) => {
+            items.push({ path: `/blog/${p.id}`, title: p.title, label: "Blog" });
+          });
+        }
+        if (Array.isArray(receptiData)) {
+          receptiData.forEach((r: { id: string; title: string }) => {
+            items.push({ path: `/recepti/${r.id}`, title: r.title, label: "Recept" });
+          });
+        }
+        if (Array.isArray(proizvodiData)) {
+          proizvodiData.forEach((p: { id: string; name: string }) => {
+            items.push({ path: `/proizvodi/${p.id}`, title: p.name, label: "Proizvod" });
+          });
+        }
+        setLinkSuggestionsSource(items);
+      })
+      .catch(() => setLinkSuggestionsSource([]));
+  }, [isLinkModalOpen]);
+
+  // Filtriraj predloške linkova dok korisnik tipka
+  useEffect(() => {
+    if (!isLinkModalOpen) return;
+    const q = linkUrl.trim().toLowerCase().replace(/^https?:\/\/*/, "").replace(/^\/*/, "");
+    if (!q) {
+      setLinkSuggestions(linkSuggestionsSource.slice(0, 10));
+      setLinkSuggestionsVisible(linkSuggestionsSource.length > 0);
+      return;
+    }
+    const filtered = linkSuggestionsSource.filter(
+      (item) =>
+        item.path.toLowerCase().includes(q) ||
+        item.title.toLowerCase().includes(q) ||
+        item.label.toLowerCase().includes(q)
+    ).slice(0, 12);
+    setLinkSuggestions(filtered);
+    setLinkSuggestionsVisible(filtered.length > 0);
+  }, [linkUrl, linkSuggestionsSource, isLinkModalOpen]);
+
+  // Kad se modal otvori za uređivanje, osiguraj da se URL prikaže u polju (iz refa)
+  useEffect(() => {
+    if (isLinkModalOpen && isEditingLink && editingLinkRef.current) {
+      const href = editingLinkRef.current.getAttribute("href") || editingLinkRef.current.href || "";
+      setLinkUrl(href || "https://");
+      setLinkOpenInNewTab(editingLinkRef.current.target === "_blank");
+    }
+  }, [isLinkModalOpen, isEditingLink]);
+
   const headingOptions = [
     { value: "h1", label: "Naslov 1", preview: "text-2xl font-bold" },
     { value: "h2", label: "Naslov 2", preview: "text-xl font-bold" },
@@ -110,24 +179,27 @@ export function RichTextEditor({
     { value: "p", label: "Paragraf", preview: "text-base font-normal" },
   ];
 
+  // Sync value iz parenta u editor samo kad je to novi sadržaj (npr. učitani post), ne kad parent vrati ono što smo upravo poslali – inače se gubi cursor i ponaša čudno
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value;
-    }
+    if (!editorRef.current) return;
+    if (value === lastSentContentRef.current) return;
+    editorRef.current.innerHTML = value;
+    lastSentContentRef.current = value;
   }, [value]);
 
   const updateContent = () => {
     if (editorRef.current) {
       let html = editorRef.current.innerHTML;
-      
+
       // Normaliziraj bold tagove - zamijeni <b> s <strong>
-      html = html.replace(/<b\b[^>]*>/gi, '<strong>');
-      html = html.replace(/<\/b>/gi, '</strong>');
-      
+      html = html.replace(/<b\b[^>]*>/gi, "<strong>");
+      html = html.replace(/<\/b>/gi, "</strong>");
+
       // Normaliziraj italic tagove - zamijeni <i> s <em>
-      html = html.replace(/<i\b[^>]*>/gi, '<em>');
-      html = html.replace(/<\/i>/gi, '</em>');
-      
+      html = html.replace(/<i\b[^>]*>/gi, "<em>");
+      html = html.replace(/<\/i>/gi, "</em>");
+
+      lastSentContentRef.current = html;
       onChange(html);
     }
   };
@@ -158,6 +230,31 @@ export function RichTextEditor({
       current = current.parentNode;
     }
     return null;
+  };
+
+  // Vrati trenutni blok (h1, h2, h3, h4, p) na temelju kursora/selekcije – za prikaz u izborniku stilova
+  const getCurrentBlockTag = (): string => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !editorRef.current) return "p";
+    const range = sel.getRangeAt(0);
+    let node: Node | null = range.startContainer;
+    const blockTags = ["H1", "H2", "H3", "H4", "P", "DIV"];
+    while (node && node !== editorRef.current) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tag = (node as Element).tagName.toUpperCase();
+        if (tag === "H1" || tag === "H2" || tag === "H3" || tag === "H4") return tag.toLowerCase();
+        if (tag === "P") return "p";
+        if (tag === "DIV") return "p";
+      }
+      node = node.parentNode;
+    }
+    return "p";
+  };
+
+  const updateSelectedHeadingFromSelection = () => {
+    if (!editorRef.current) return;
+    const tag = getCurrentBlockTag();
+    setSelectedHeading(tag);
   };
 
   // Helper funkcija za uklanjanje bold tagova iz rangea
@@ -430,10 +527,109 @@ export function RichTextEditor({
     updateContent();
   };
 
-  // Custom heading
+  // Pomoć: pretvori tekst u siguran HTML (escape + newline -> <br>)
+  const escapeAndBreaks = (s: string): string =>
+    s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\n/g, "<br>");
+
+  // Iz fragmenta odabira napravi jedan string: tekst svakog bloka spojen s \n\n (da se pri Naslov 1 očuvaju prijelomi)
+  const fragmentToBlockText = (fragment: DocumentFragment): string => {
+    const parts: string[] = [];
+    const blockTags = ["P", "H1", "H2", "H3", "H4", "H5", "H6", "DIV"];
+
+    const processNode = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const t = (node as Text).textContent?.trim() ?? "";
+        if (t) parts.push((node as Text).textContent ?? "");
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+      const el = node as Element;
+      if (blockTags.includes(el.tagName)) {
+        const hasBlockChildren = el.querySelector("p, h1, h2, h3, h4, h5, h6, div");
+        if (hasBlockChildren) {
+          Array.from(el.childNodes).forEach(processNode);
+        } else {
+          const t = el.textContent?.trim() ?? "";
+          if (t) parts.push(el.textContent ?? "");
+        }
+        return;
+      }
+      const t = el.textContent?.trim() ?? "";
+      if (t) parts.push(el.textContent ?? "");
+    };
+
+    Array.from(fragment.childNodes).forEach(processNode);
+    return parts.join("\n\n");
+  };
+
+  // Iz naslovnog elementa (h1–h6) napravi čisti string: samo tekst + \n za <br>, bez HTML-a da paragraf ne nasljeđuje veličinu
+  const headingContentToPlainText = (el: Element): string => {
+    const parts: string[] = [];
+    el.childNodes.forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        parts.push((node as Text).textContent ?? "");
+      } else if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName === "BR") {
+        parts.push("\n");
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        parts.push((node as Element).textContent ?? "");
+      }
+    });
+    return parts.join("");
+  };
+
+  // Iz fragmenta odabira napravi niz <p> elemenata (jedan po bloku) – da se ne spoji sve u jedan blok
+  const fragmentToParagraphs = (fragment: DocumentFragment): HTMLParagraphElement[] => {
+    const paragraphs: HTMLParagraphElement[] = [];
+    const blockTags = ["P", "H1", "H2", "H3", "H4", "H5", "H6", "DIV"];
+
+    const processNode = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = (node as Text).textContent?.trim() ?? "";
+        if (text) {
+          const p = document.createElement("p");
+          p.innerHTML = escapeAndBreaks((node as Text).textContent ?? "");
+          paragraphs.push(p);
+        }
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+      const el = node as Element;
+      if (blockTags.includes(el.tagName)) {
+        const hasBlockChildren = el.querySelector("p, h1, h2, h3, h4, h5, h6, div");
+        if (hasBlockChildren) {
+          Array.from(el.childNodes).forEach(processNode);
+        } else {
+          const p = document.createElement("p");
+          if (["H1", "H2", "H3", "H4", "H5", "H6"].includes(el.tagName)) {
+            const plain = headingContentToPlainText(el);
+            p.innerHTML = escapeAndBreaks(plain);
+          } else {
+            p.innerHTML = el.innerHTML || "";
+          }
+          paragraphs.push(p);
+        }
+        return;
+      }
+      const text = el.textContent?.trim() ?? "";
+      if (text) {
+        const p = document.createElement("p");
+        p.innerHTML = escapeAndBreaks(el.textContent ?? "");
+        paragraphs.push(p);
+      }
+    };
+
+    Array.from(fragment.childNodes).forEach(processNode);
+    return paragraphs;
+  };
+
+  // Primijeni stil (Paragraf ili Naslov 1–4) na odabrani tekst ili trenutni blok
   const handleHeading = (level: string) => {
     if (!level) return;
-    
+
     const sel = getSelectionAndRange();
     if (!sel) {
       editorRef.current?.focus();
@@ -441,52 +637,88 @@ export function RichTextEditor({
     }
 
     const { selection, range } = sel;
-    
-    // Provjeri da li je već u heading tagu
-    const headingElement = isInTag(range.commonAncestorContainer, ["H1", "H2", "H3", "H4", "H5", "H6"]);
-    
-    if (headingElement && headingElement.tagName.toLowerCase() === level) {
-      // Ako je već taj heading, pretvori u paragraf
-      const text = headingElement.textContent || "";
-      const p = document.createElement("p");
-      p.textContent = text;
-      headingElement.parentNode?.replaceChild(p, headingElement);
-    } else {
-      // Kreiraj novi heading
-      const heading = document.createElement(level);
-      
-      if (!range.collapsed) {
-        const contents = range.extractContents();
-        heading.appendChild(contents);
-        range.insertNode(heading);
+    const newBlock = document.createElement(level);
+
+    if (!range.collapsed) {
+      if (level === "p") {
+        const headingElement = isInTag(range.commonAncestorContainer, ["H1", "H2", "H3", "H4", "H5", "H6"]);
+        if (headingElement && editorRef.current?.contains(headingElement)) {
+          // Odabir je unutar jednog naslova – zamijeni cijeli naslov s jednim paragrafom da vizualno ne ostane „ogroman”
+          const p = document.createElement("p");
+          p.innerHTML = escapeAndBreaks(headingContentToPlainText(headingElement));
+          headingElement.parentNode?.replaceChild(p, headingElement);
+          const endRange = document.createRange();
+          endRange.selectNodeContents(p);
+          endRange.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(endRange);
+        } else {
+          // Paragraf: više blokova ili odabir nije samo unutar naslova – sačuvaj blokove
+          const fragment = range.cloneContents();
+          const paragraphs = fragmentToParagraphs(fragment);
+          range.deleteContents();
+          if (paragraphs.length === 0) {
+            const p = document.createElement("p");
+            p.innerHTML = "<br>";
+            range.insertNode(p);
+          } else {
+            const docFrag = document.createDocumentFragment();
+            paragraphs.forEach((p) => docFrag.appendChild(p));
+            range.insertNode(docFrag);
+          }
+          const last = paragraphs[paragraphs.length - 1];
+          if (last) {
+            const endRange = document.createRange();
+            endRange.selectNodeContents(last);
+            endRange.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(endRange);
+          }
+        }
       } else {
-        // Ako je u postojećem bloku, zamijeni ga
+        // Naslov: cijeli odabir jedan blok; granice starih blokova ostaju kao \n\n -> <br><br>
+        const fragment = range.cloneContents();
+        const text = fragmentToBlockText(fragment);
+        range.deleteContents();
+        newBlock.innerHTML = escapeAndBreaks(text);
+        range.insertNode(newBlock);
+        const endRange = document.createRange();
+        endRange.selectNodeContents(newBlock);
+        endRange.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(endRange);
+      }
+    } else {
+      // Samo cursor: zamijeni cijeli blok u kojem je cursor
+      const headingElement = isInTag(range.commonAncestorContainer, ["H1", "H2", "H3", "H4", "H5", "H6"]);
+      if (headingElement && headingElement.tagName.toLowerCase() === level && level !== "p") {
+        // Već je taj naslov – pretvori u paragraf
+        const text = headingElement.textContent || "";
+        const p = document.createElement("p");
+        p.textContent = text;
+        headingElement.parentNode?.replaceChild(p, headingElement);
+      } else {
         let blockElement: Node | null = range.commonAncestorContainer;
         while (blockElement && blockElement !== editorRef.current) {
           if (blockElement.nodeType === Node.ELEMENT_NODE) {
             const el = blockElement as Element;
             if (["P", "H1", "H2", "H3", "H4", "H5", "H6", "DIV"].includes(el.tagName)) {
               const text = el.textContent || "";
-              heading.textContent = text;
-              el.parentNode?.replaceChild(heading, el);
-              editorRef.current?.focus();
-              updateContent();
-              return;
+              newBlock.textContent = text;
+              el.parentNode?.replaceChild(newBlock, el);
+              break;
             }
           }
           blockElement = blockElement.parentNode;
         }
-        
-        // Ako nije u bloku, kreiraj novi
-        heading.textContent = "Novi naslov";
-        range.insertNode(heading);
-        const newRange = document.createRange();
-        newRange.selectNodeContents(heading);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
+        if (!blockElement || blockElement === editorRef.current) {
+          newBlock.textContent = level === "p" ? "" : "Novi naslov";
+          range.insertNode(newBlock);
+        }
       }
     }
-    
+
+    setSelectedHeading(level);
     editorRef.current?.focus();
     updateContent();
   };
@@ -653,6 +885,24 @@ export function RichTextEditor({
     return null;
   };
 
+  // Helper: svi blok elementi obuhvaćeni selekcijom (od početka do kraja rangea), jedan blok = jedna stavka liste
+  const getSelectedBlockElements = (range: Range): HTMLElement[] => {
+    const startBlock = findParentBlock(range.startContainer);
+    const endBlock = findParentBlock(range.endContainer);
+    if (!startBlock) return [];
+    const last = endBlock ?? startBlock;
+    if (startBlock === last) return [startBlock];
+    if (startBlock.parentNode !== last.parentNode) return [startBlock];
+    const blocks: HTMLElement[] = [];
+    let current: Element | null = startBlock;
+    while (current) {
+      blocks.push(current as HTMLElement);
+      if (current === last) break;
+      current = current.nextElementSibling;
+    }
+    return blocks;
+  };
+
   // Helper: kreiraj listu s pravilnim stilom
   const createStyledList = (type: "ul" | "ol"): HTMLElement => {
     const list = document.createElement(type);
@@ -738,40 +988,63 @@ export function RichTextEditor({
         selection.addRange(newRange);
       }
     } else {
-      // Pronađi roditeljski blok element
-      const blockElement = findParentBlock(range.commonAncestorContainer);
+      // Svi blokovi obuhvaćeni selekcijom – jedan blok = jedna stavka liste
+      const blocks = getSelectedBlockElements(range);
+      const blockElement = blocks[0];
       
       if (blockElement && blockElement.parentNode) {
-        // Kreiraj novu stavku liste
-        const li = document.createElement("li");
-        li.innerHTML = blockElement.innerHTML || "<br>";
-        
-        // Provjeri je li prethodni element UL lista
         const prevSibling = blockElement.previousElementSibling;
-        // Provjeri je li sljedeći element UL lista
         const nextSibling = blockElement.nextElementSibling;
-        
-        if (prevSibling && prevSibling.tagName === "UL") {
-          // Dodaj u postojeću prethodnu listu
+        const isMultipleBlocks = blocks.length > 1;
+
+        if (isMultipleBlocks) {
+          // Više odabranih redova: kreiraj jednu listu s jednom <li> po bloku
+          const ul = createStyledList("ul");
+          for (const block of blocks) {
+            const li = document.createElement("li");
+            li.innerHTML = block.innerHTML || "<br>";
+            ul.appendChild(li);
+          }
+          blockElement.parentNode.insertBefore(ul, blockElement);
+          blocks.forEach((b) => b.remove());
+          const lastLi = ul.lastElementChild;
+          const newRange = document.createRange();
+          newRange.setStart(lastLi ?? ul, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        } else if (prevSibling && prevSibling.tagName === "UL") {
+          const li = document.createElement("li");
+          li.innerHTML = blockElement.innerHTML || "<br>";
           prevSibling.appendChild(li);
           blockElement.remove();
+          const newRange = document.createRange();
+          newRange.setStart(li, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
         } else if (nextSibling && nextSibling.tagName === "UL") {
-          // Dodaj na početak sljedeće liste
+          const li = document.createElement("li");
+          li.innerHTML = blockElement.innerHTML || "<br>";
           nextSibling.insertBefore(li, nextSibling.firstChild);
           blockElement.remove();
+          const newRange = document.createRange();
+          newRange.setStart(li, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
         } else {
-          // Kreiraj novu listu
           const ul = createStyledList("ul");
+          const li = document.createElement("li");
+          li.innerHTML = blockElement.innerHTML || "<br>";
           ul.appendChild(li);
           blockElement.parentNode.replaceChild(ul, blockElement);
+          const newRange = document.createRange();
+          newRange.setStart(li, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
         }
-        
-        // Postavi kursor u li
-        const newRange = document.createRange();
-        newRange.setStart(li, 0);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
       } else {
         // Ako nema blok elementa (tekst direktno u editoru), omotaj u listu
         const ul = createStyledList("ul");
@@ -788,7 +1061,6 @@ export function RichTextEditor({
           range.insertNode(ul);
         }
         
-        // Postavi kursor u li
         const newRange = document.createRange();
         newRange.setStart(li, 0);
         newRange.collapse(true);
@@ -876,40 +1148,63 @@ export function RichTextEditor({
         selection.addRange(newRange);
       }
     } else {
-      // Pronađi roditeljski blok element
-      const blockElement = findParentBlock(range.commonAncestorContainer);
+      // Svi blokovi obuhvaćeni selekcijom – jedan blok = jedna stavka liste
+      const blocks = getSelectedBlockElements(range);
+      const blockElement = blocks[0];
       
       if (blockElement && blockElement.parentNode) {
-        // Kreiraj novu stavku liste
-        const li = document.createElement("li");
-        li.innerHTML = blockElement.innerHTML || "<br>";
-        
-        // Provjeri je li prethodni element OL lista
         const prevSibling = blockElement.previousElementSibling;
-        // Provjeri je li sljedeći element OL lista
         const nextSibling = blockElement.nextElementSibling;
-        
-        if (prevSibling && prevSibling.tagName === "OL") {
-          // Dodaj u postojeću prethodnu listu
+        const isMultipleBlocks = blocks.length > 1;
+
+        if (isMultipleBlocks) {
+          // Više odabranih redova: kreiraj jednu numeriranu listu s jednom <li> po bloku
+          const ol = createStyledList("ol");
+          for (const block of blocks) {
+            const li = document.createElement("li");
+            li.innerHTML = block.innerHTML || "<br>";
+            ol.appendChild(li);
+          }
+          blockElement.parentNode.insertBefore(ol, blockElement);
+          blocks.forEach((b) => b.remove());
+          const lastLi = ol.lastElementChild;
+          const newRange = document.createRange();
+          newRange.setStart(lastLi ?? ol, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        } else if (prevSibling && prevSibling.tagName === "OL") {
+          const li = document.createElement("li");
+          li.innerHTML = blockElement.innerHTML || "<br>";
           prevSibling.appendChild(li);
           blockElement.remove();
+          const newRange = document.createRange();
+          newRange.setStart(li, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
         } else if (nextSibling && nextSibling.tagName === "OL") {
-          // Dodaj na početak sljedeće liste
+          const li = document.createElement("li");
+          li.innerHTML = blockElement.innerHTML || "<br>";
           nextSibling.insertBefore(li, nextSibling.firstChild);
           blockElement.remove();
+          const newRange = document.createRange();
+          newRange.setStart(li, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
         } else {
-          // Kreiraj novu listu
           const ol = createStyledList("ol");
+          const li = document.createElement("li");
+          li.innerHTML = blockElement.innerHTML || "<br>";
           ol.appendChild(li);
           blockElement.parentNode.replaceChild(ol, blockElement);
+          const newRange = document.createRange();
+          newRange.setStart(li, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
         }
-        
-        // Postavi kursor u li
-        const newRange = document.createRange();
-        newRange.setStart(li, 0);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
       } else {
         // Ako nema blok elementa, omotaj u listu
         const ol = createStyledList("ol");
@@ -926,7 +1221,6 @@ export function RichTextEditor({
           range.insertNode(ol);
         }
         
-        // Postavi kursor u li
         const newRange = document.createRange();
         newRange.setStart(li, 0);
         newRange.collapse(true);
@@ -939,7 +1233,7 @@ export function RichTextEditor({
     updateContent();
   };
 
-  // Custom link - otvori modal
+  // Custom link – otvori modal za dodavanje ili uređivanje linka
   const handleLink = () => {
     const sel = getSelectionAndRange();
     if (!sel) {
@@ -948,46 +1242,66 @@ export function RichTextEditor({
     }
 
     const { range } = sel;
-    
+
     if (range.collapsed) {
       alert("Odaberi tekst koji želiš pretvoriti u link");
       return;
     }
-    
-    // Provjeri da li je već link
-    const linkElement = isInTag(range.commonAncestorContainer, ["A"]);
-    
+
+    // Kad je odabran cijeli link, commonAncestorContainer može biti roditelj (npr. <p>) – provjeri i start/end
+    const linkElement = (isInTag(range.commonAncestorContainer, ["A"]) ||
+      isInTag(range.startContainer, ["A"]) ||
+      isInTag(range.endContainer, ["A"])) as HTMLAnchorElement | null;
+
     if (linkElement) {
-      // Ako je već link, ukloni link
-      const text = linkElement.textContent || "";
-      const textNode = document.createTextNode(text);
-      linkElement.parentNode?.replaceChild(textNode, linkElement);
-      editorRef.current?.focus();
-      updateContent();
+      // Postojeći link – otvori modal za uređivanje (koristi getAttribute da ostane relativna putanja)
+      editingLinkRef.current = linkElement;
+      const href = linkElement.getAttribute("href") || linkElement.href || "https://";
+      setLinkUrl(href);
+      setLinkOpenInNewTab(linkElement.target === "_blank");
+      setIsEditingLink(true);
+      setIsLinkModalOpen(true);
+      setTimeout(() => linkInputRef.current?.focus(), 100);
     } else {
-      // Spremi range i otvori modal
+      // Novi link – spremi range i otvori modal
+      editingLinkRef.current = null;
       setSavedRange(range.cloneRange());
       setLinkUrl("https://");
       setLinkOpenInNewTab(true);
+      setIsEditingLink(false);
       setIsLinkModalOpen(true);
-      // Focus input nakon što se modal otvori
       setTimeout(() => linkInputRef.current?.focus(), 100);
     }
   };
   
-  // Potvrdi link iz modala
+  // Potvrdi link iz modala (dodaj novi ili ažuriraj postojeći)
   const confirmLink = () => {
     if (!linkUrl || !linkUrl.trim() || linkUrl.trim() === "https://") {
       setIsLinkModalOpen(false);
+      setIsEditingLink(false);
+      editingLinkRef.current = null;
       return;
     }
-    
-    if (savedRange && editorRef.current) {
+
+    if (isEditingLink && editingLinkRef.current) {
+      const a = editingLinkRef.current;
+      a.href = linkUrl.trim();
+      if (linkOpenInNewTab) {
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+      } else {
+        a.removeAttribute("target");
+        a.removeAttribute("rel");
+      }
+      updateContent();
+      editingLinkRef.current = null;
+      setIsEditingLink(false);
+    } else if (savedRange && editorRef.current) {
       const selection = window.getSelection();
       if (selection) {
         selection.removeAllRanges();
         selection.addRange(savedRange);
-        
+
         const a = document.createElement("a");
         a.href = linkUrl.trim();
         if (linkOpenInNewTab) {
@@ -995,27 +1309,44 @@ export function RichTextEditor({
           a.rel = "noopener noreferrer";
         }
         a.textContent = savedRange.toString() || linkUrl.trim();
-        
+
         try {
           savedRange.surroundContents(a);
         } catch (e) {
           savedRange.deleteContents();
           savedRange.insertNode(a);
         }
-        
+
         updateContent();
       }
+      setSavedRange(null);
     }
-    
+
     setIsLinkModalOpen(false);
-    setSavedRange(null);
     editorRef.current?.focus();
   };
-  
+
   // Zatvori link modal
   const closeLinkModal = () => {
     setIsLinkModalOpen(false);
     setSavedRange(null);
+    setIsEditingLink(false);
+    editingLinkRef.current = null;
+    editorRef.current?.focus();
+  };
+
+  // Ukloni postojeći link (ostavi samo tekst)
+  const removeLink = () => {
+    if (editingLinkRef.current) {
+      const a = editingLinkRef.current;
+      const text = a.textContent || "";
+      const textNode = document.createTextNode(text);
+      a.parentNode?.replaceChild(textNode, a);
+      updateContent();
+      editingLinkRef.current = null;
+      setIsEditingLink(false);
+    }
+    setIsLinkModalOpen(false);
     editorRef.current?.focus();
   };
 
@@ -1027,7 +1358,10 @@ export function RichTextEditor({
         <div ref={headingDropdownRef} className="relative">
           <button
             type="button"
-            onClick={() => setIsHeadingOpen(!isHeadingOpen)}
+            onClick={() => {
+              updateSelectedHeadingFromSelection();
+              setIsHeadingOpen(!isHeadingOpen);
+            }}
             className="flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-gf-text-primary transition-all hover:border-gf-cta dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
           >
             <Type className="h-4 w-4" />
@@ -1268,6 +1602,9 @@ export function RichTextEditor({
         contentEditable
         onInput={updateContent}
         onBlur={updateContent}
+        onClick={updateSelectedHeadingFromSelection}
+        onKeyUp={updateSelectedHeadingFromSelection}
+        onMouseUp={updateSelectedHeadingFromSelection}
         className="min-h-[300px] px-4 py-3 text-gf-text-primary focus:outline-none dark:text-neutral-100 [&_a]:text-gf-cta [&_a]:underline [&_a:hover]:text-gf-cta-hover [&_a]:cursor-pointer [&_a]:relative [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-1 [&_h1]:mt-8 [&_h1]:mb-4 [&_h2]:mt-7 [&_h2]:mb-3 [&_h3]:mt-6 [&_h3]:mb-3 [&_h4]:mt-5 [&_h4]:mb-2 [&_h5]:mt-4 [&_h5]:mb-2 [&_h6]:mt-4 [&_h6]:mb-2 [&_p]:my-3 [&_p]:leading-relaxed"
         style={{
           whiteSpace: "pre-wrap",
@@ -1382,7 +1719,7 @@ export function RichTextEditor({
                   <LinkIcon className="h-5 w-5 text-white" />
                 </div>
                 <h3 className="text-lg font-semibold text-gf-text-primary dark:text-neutral-100">
-                  Dodaj link
+                  {isEditingLink ? "Uredi link" : "Dodaj link"}
                 </h3>
               </div>
               <button
@@ -1394,27 +1731,69 @@ export function RichTextEditor({
               </button>
             </div>
             
-            {/* URL Input */}
-            <div className="mb-4">
+            {/* URL Input + predlošci linkova */}
+            <div className="relative mb-4">
               <label className="mb-2 block text-sm font-medium text-gf-text-secondary dark:text-neutral-400">
                 URL adresa
               </label>
               <input
                 ref={linkInputRef}
-                type="url"
+                type="text"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
+                onFocus={() => {
+                  if (linkSuggestions.length > 0) setLinkSuggestionsVisible(true);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     confirmLink();
                   } else if (e.key === "Escape") {
+                    setLinkSuggestionsVisible(false);
                     closeLinkModal();
                   }
                 }}
-                placeholder="https://primjer.com"
+                placeholder="https://... ili upiši /blog ili naslov posta"
                 className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-gf-text-primary transition-all placeholder:text-neutral-400 focus:border-gf-cta focus:bg-white focus:outline-none focus:ring-2 focus:ring-gf-cta/20 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-gf-cta dark:focus:bg-neutral-700"
               />
+              {linkSuggestionsVisible && linkSuggestions.length > 0 && (
+                <ul
+                  className="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-auto rounded-xl border border-neutral-200 bg-white py-1 shadow-xl dark:border-neutral-600 dark:bg-neutral-800"
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  <li className="px-3 py-1.5 text-xs font-medium text-gf-text-secondary dark:text-neutral-400">
+                    Blog, recepti, proizvodi – klikni za putanju
+                  </li>
+                  {linkSuggestions.map((item) => (
+                    <li key={`${item.label}-${item.path}`}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setLinkUrl(item.path);
+                          setLinkSuggestionsVisible(false);
+                        }}
+                        className="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-gf-cta/10 dark:hover:bg-gf-cta/20"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="rounded bg-neutral-200 px-1.5 py-0.5 text-xs font-medium text-gf-text-secondary dark:bg-neutral-600 dark:text-neutral-300">
+                            {item.label}
+                          </span>
+                          <span className="font-medium text-gf-text-primary dark:text-neutral-100">
+                            {item.title}
+                          </span>
+                        </span>
+                        <span className="text-xs text-gf-text-secondary dark:text-neutral-400">
+                          {item.path}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-1.5 text-xs text-gf-text-secondary dark:text-neutral-400">
+                Upiši <code className="rounded bg-neutral-200 px-1 dark:bg-neutral-600">/blog</code> ili dio naslova – prikazat će se postovi za odabir (relativna putanja radi i lokalno i online).
+              </p>
             </div>
             
             {/* Open in new tab checkbox */}
@@ -1443,21 +1822,32 @@ export function RichTextEditor({
             </div>
             
             {/* Actions */}
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={closeLinkModal}
-                className="flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-3 font-medium text-gf-text-primary transition-all hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600"
-              >
-                Odustani
-              </button>
-              <button
-                type="button"
-                onClick={confirmLink}
-                className="flex-1 rounded-xl bg-gradient-to-r from-gf-cta to-gf-cta-hover px-4 py-3 font-medium text-white shadow-lg shadow-gf-cta/25 transition-all hover:shadow-xl hover:shadow-gf-cta/30"
-              >
-                Dodaj link
-              </button>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeLinkModal}
+                  className="flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-3 font-medium text-gf-text-primary transition-all hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600"
+                >
+                  Odustani
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmLink}
+                  className="flex-1 rounded-xl bg-gradient-to-r from-gf-cta to-gf-cta-hover px-4 py-3 font-medium text-white shadow-lg shadow-gf-cta/25 transition-all hover:shadow-xl hover:shadow-gf-cta/30"
+                >
+                  {isEditingLink ? "Spremi" : "Dodaj link"}
+                </button>
+              </div>
+              {isEditingLink && (
+                <button
+                  type="button"
+                  onClick={removeLink}
+                  className="rounded-xl border border-red-300 bg-white px-4 py-3 font-medium text-red-600 transition-all hover:bg-red-50 dark:border-red-700 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
+                >
+                  Ukloni link (ostavi samo tekst)
+                </button>
+              )}
             </div>
           </div>
         </div>

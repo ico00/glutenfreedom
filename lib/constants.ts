@@ -3,20 +3,18 @@
 export const BRANDS = [
   "Schär",
   "Barilla",
-  "Dr. Schär",
   "No Gluten No Problem",
   "Glutano",
   "Vindija",
   "Gavrilović",
   "Vitaminka",
   "Alnavit",
+  "Podravka",
   "Callebaut",
   "Ostalo",
 ] as const;
 
 export const STORES = [
-  "Gluten Free Shop",
-  "Bio Planet",
   "Garden",
   "Konzum",
   "Spar",
@@ -37,6 +35,8 @@ export const PRODUCT_CATEGORIES = [
   "pića",
   "konzerve",
   "začini",
+  "prilozi",
+  "alkohol",
   "ostalo",
 ] as const;
 

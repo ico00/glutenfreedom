@@ -46,6 +46,7 @@ async function verifyCredentials(email: string, password: string) {
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
   ...authConfig,
+  trustHost: true, // Potrebno iza proxyja (npr. Fly.io) da session radi ispravno
   providers: [
     Credentials({
       async authorize(credentials) {
